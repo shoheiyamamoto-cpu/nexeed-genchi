@@ -1,5 +1,5 @@
 // DDチェックリストの標準項目
-// 番号と英語の要件は BDC「Data Center Site Due Diligence Finding List」に合わせる。
+// 番号と英語の要件は 「Data Center Site Due Diligence Finding List」形式に合わせる。
 // ch はストラクト（ビーコンサルティング）DD報告書の章：2 敷地概要／3 法チェック／4 インフラの確認／6 立地リスク
 // lv：must＝不可偏離（満たさないと候補から外れる）、key＝重点確認、gen＝一般
 // field：現地で確認・撮影できる項目
@@ -120,7 +120,7 @@ export const DD_ITEMS = [
   I("5.23", "4", "Utility", "Others", "Other utilities (city gas etc.)", "その他のインフラ（都市ガス 等）", "", "gen", true),
 ];
 
-// BDCのリスクマトリクス：影響度 A〜E × 発生可能性 5〜1 → 高・中・低
+// リスクマトリクス：影響度 A〜E × 発生可能性 5〜1 → 高・中・低
 const MATRIX = { A: "HHHMM", B: "HHMMM", C: "HMMML", D: "MMMML", E: "MMLLL" };
 export const SEVERITY = [["A", "致命的"], ["B", "重大"], ["C", "中程度"], ["D", "軽微"], ["E", "無視できる"]];
 export const LIKELIHOOD = [[5, "ほぼ確実"], [4, "頻繁"], [3, "時々"], [2, "まれ"], [1, "ほとんどない"]];

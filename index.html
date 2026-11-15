@@ -300,8 +300,9 @@ textarea{resize:vertical;min-height:72px}select{height:44px}
   <div class="count" id="expSite" style="white-space:normal"></div>
   <label class="opt"><input type="radio" name="exf" value="xlsx" checked>写真台帳（Excel）<small>1ページ3枚の写真台帳と、調査位置図・写真一覧のシート</small></label>
   <label class="opt"><input type="radio" name="exf" value="html">調査報告書（HTML）<small>開いて印刷するとPDFになります</small></label>
+  <label class="opt" style="grid-template-columns:auto 1fr;align-items:center">位置図の背景<select id="exBg" style="height:38px"><option value="photo">航空写真（地理院）</option><option value="std">地図（地理院）</option><option value="none">なし（方眼）</option></select></label>
   <label class="opt"><input type="radio" name="exf" value="kmz">Google Earth用（KMZ）</label>
-  <label class="opt"><input type="radio" name="exf" value="dd">DD所見リスト（Excel・BDC様式）<small>BDCの「Site Due Diligence Finding List」と同じ列で、所見・リスク・対策・証拠写真No.を出力</small></label>
+  <label class="opt"><input type="radio" name="exf" value="dd">DD所見リスト（Excel）<small>「Site Due Diligence Finding List」形式の列で、所見・リスク・対策・証拠写真No.を出力</small></label>
   <label class="opt"><input type="radio" name="exf" value="csv">一覧表（CSV）</label>
   <div class="status" id="expStatus"></div>
   <div class="acts" style="margin-top:2px"><button class="btn primary grow" id="expGo">書き出す</button><button class="btn" id="expNo">閉じる</button></div>
@@ -311,7 +312,7 @@ textarea{resize:vertical;min-height:72px}select{height:44px}
 
 <script type="module">
 import { firebaseConfig, allowedDomains } from "./config.js?v=2";
-import { DD_CHAPTERS, DD_ITEMS, SEVERITY, LIKELIHOOD, riskLevel } from "./dd-items.js?v=1";
+import { DD_CHAPTERS, DD_ITEMS, SEVERITY, LIKELIHOOD, riskLevel } from "./dd-items.js?v=2";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, updateDoc, deleteDoc, getDoc, onSnapshot, query, where, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
@@ -655,7 +656,7 @@ function openDD(id){const it=ddById(id);if(!it)return;ddOpen=id;const r=ddMap[id
     <label class="wide">照会先・資料名<input id="dContact" value="${esc(r.contact||"")}" placeholder="例：川西市 都市計画課／重要事項説明書 p.12" autocomplete="off"></label>
     <label class="wide">所見<textarea id="dFinding" rows="4" placeholder="例：敷地北側に66kV送電線（鉄塔No.12）。敷地境界から約180m。">${esc(r.finding||"")}</textarea></label>
   </div>
-  <div class="ddrisk"><b>リスク評価（BDCのマトリクス）</b>
+  <div class="ddrisk"><b>リスク評価（リスクマトリクス）</b>
     <div class="form" style="margin-top:8px">
       <label>発生可能性<select id="dLike">${opt([["","—"],...LIKELIHOOD.map(([k,l])=>[k,`${k} ${l}`])],r.likelihood)}</select></label>
       <label>影響度<select id="dSev">${opt([["","—"],...SEVERITY.map(([k,l])=>[k,`${k} ${l}`])],r.severity)}</select></label>
@@ -710,6 +711,7 @@ renderDDTag();
 $("expOpen").onclick=()=>{const s=curSite();if(!s){toast("先に現場を選んでください");return}const l=sitePhotos();$("expSite").textContent=`${s.name}　写真 ${l.length}枚（位置あり ${l.filter(hasPos).length}枚）`;$("expStatus").textContent="";$("expDlg").hidden=false};
 $("expNo").onclick=()=>{$("expDlg").hidden=true};
 const loadScript=src=>new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`)){res();return}const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("ライブラリを読み込めません"));document.head.appendChild(s)});
+const expBg=()=>$("exBg")?.value||"photo";
 const stamp=()=>{const d=new Date();return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`};
 const safeName=t=>String(t||"現場").replace(/[\\/:*?"<>|]/g,"_").slice(0,60);
 function download(name,data){const b=data instanceof Blob?data:new Blob([data]);const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}
@@ -717,21 +719,44 @@ async function fullURL(p){try{const d=await getDoc(doc(db,"imgs",p.id));if(d.exi
 const rowOf=(p,i)=>({ddTxt:(p.dd||[]).join("・"),measure:p.measure||"",no:i+1,at:fmtDT(p.takenAt),cat:p.cat||"",title:p.title||"",memo:p.memo||"",lat:hasPos(p)?p.lat.toFixed(6):"",lng:hasPos(p)?p.lng.toFixed(6):"",acc:p.acc?Math.round(p.acc):"",dir:hasDir(p)?dirName(p.heading):"",deg:hasDir(p)?Math.round(p.heading):"",by:p.byName||"",
   pos:hasPos(p)?`${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}${p.acc?`（±${Math.round(p.acc)}m）`:""}`:"記録なし",dirTxt:hasDir(p)?`${dirName(p.heading)}（${Math.round(p.heading)}°）`:"記録なし"});
 // 位置図（方眼・方位・縮尺付き）
-function plotPNG(list,W=1800,H=1240){const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d"),u=W/900;x.fillStyle="#fff";x.fillRect(0,0,W,H);
-  const pts=list.filter(hasPos);if(!pts.length)return c.toDataURL("image/png");
-  const O={lat:pts.reduce((a,p)=>a+p.lat,0)/pts.length,lng:pts.reduce((a,p)=>a+p.lng,0)/pts.length};
-  const toW=p=>({x:(p.lng-O.lng)*Math.cos(O.lat*RAD)*111320,y:(p.lat-O.lat)*110574});const ws=pts.map(toW);
-  let x0=Math.min(...ws.map(w=>w.x)),x1=Math.max(...ws.map(w=>w.x)),y0=Math.min(...ws.map(w=>w.y)),y1=Math.max(...ws.map(w=>w.y));
-  const pd=90*u,s=Math.min((W-2*pd)/Math.max(x1-x0,20),(H-2*pd)/Math.max(y1-y0,20)),cx=(x0+x1)/2,cy=(y0+y1)/2;
-  const SX=v=>W/2+(v-cx)*s,SY=v=>H/2-(v-cy)*s;
-  const nice=(t)=>{const m=t/s,p=Math.pow(10,Math.floor(Math.log10(m)));for(const k of[1,2,5,10])if(k*p>=m)return k*p;return 10*p};
-  const st=nice(70*u);x.strokeStyle="#e6e9e2";x.lineWidth=u;x.beginPath();for(let v=Math.floor((cx-W/2/s)/st)*st;v<=cx+W/2/s;v+=st){x.moveTo(SX(v),0);x.lineTo(SX(v),H)}for(let v=Math.floor((cy-H/2/s)/st)*st;v<=cy+H/2/s;v+=st){x.moveTo(0,SY(v));x.lineTo(W,SY(v))}x.stroke();
-  const F=`"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif`,R=52*u;
-  list.forEach((p,i)=>{if(!hasPos(p))return;const w=toW(p),X=SX(w.x),Y=SY(w.y);let lx=X,ly=Y;
-    if(hasDir(p)){const h=p.heading*RAD,half=Math.max(8,Math.min(60,(p.fov||60)/2))*RAD;x.beginPath();x.moveTo(X,Y);x.arc(X,Y,R,h-half-Math.PI/2,h+half-Math.PI/2);x.closePath();x.fillStyle="rgba(159,196,58,.30)";x.fill();x.strokeStyle="rgba(110,150,25,.95)";x.lineWidth=1.2*u;x.stroke();lx=X+Math.sin(h)*(R+10*u);ly=Y-Math.cos(h)*(R+10*u)}
-    x.beginPath();x.arc(X,Y,3.2*u,0,7);x.fillStyle="#2a2f36";x.fill();x.beginPath();x.arc(lx,ly,10.5*u,0,7);x.fill();x.fillStyle="#fff";x.font=`700 ${11*u}px ${F}`;x.textAlign="center";x.textBaseline="middle";x.fillText(String(i+1),lx,ly+.5*u)});
-  x.save();x.translate(W-30*u,36*u);x.fillStyle="#2a2f36";x.beginPath();x.moveTo(0,-16*u);x.lineTo(7*u,10*u);x.lineTo(0,5*u);x.closePath();x.fill();x.font=`700 ${11*u}px ${F}`;x.textAlign="center";x.textBaseline="bottom";x.fillText("N",0,-18*u);x.restore();
-  const bl=nice(90*u),bx=14*u,by=H-18*u;x.strokeStyle="#2a2f36";x.lineWidth=2*u;x.beginPath();x.moveTo(bx,by-6*u);x.lineTo(bx,by);x.lineTo(bx+bl*s,by);x.lineTo(bx+bl*s,by-6*u);x.stroke();x.fillStyle="#2a2f36";x.font=`500 ${11*u}px ${F}`;x.textAlign="left";x.textBaseline="bottom";x.fillText(bl>=1000?bl/1000+" km":bl+" m",bx+bl*s+6*u,by+u);
+// 位置図（地理院タイルの航空写真・地図を背景に、撮影位置・方向・番号を描く）
+const TILE={photo:{url:"https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg",max:18,credit:"出典：地理院タイル（全国最新写真）"},std:{url:"https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png",max:18,credit:"出典：地理院タイル（標準地図）"}};
+const mx=(lng,z)=>(lng+180)/360*256*2**z;
+const my=(lat,z)=>{const s=Math.sin(lat*RAD);return (0.5-Math.log((1+s)/(1-s))/(4*Math.PI))*256*2**z};
+async function loadTile(u){try{const r=await fetch(u,{mode:"cors"});if(!r.ok)return null;return await createImageBitmap(await r.blob())}catch(e){return null}}
+async function plotPNG(list,W=1800,H=1240,bg="photo"){
+  const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d"),u=W/900;x.fillStyle="#fff";x.fillRect(0,0,W,H);
+  const pts=list.filter(hasPos);const F=`"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif`;
+  if(!pts.length){x.fillStyle="#666";x.font=`500 ${16*u}px ${F}`;x.textAlign="center";x.fillText("位置情報付きの写真がありません",W/2,H/2);return c.toDataURL("image/png")}
+  // 表示範囲：撮影位置を全部入れ、最低でも約80m四方が見える倍率（最大ズーム20相当）
+  const lat0=pts.reduce((a,p)=>a+p.lat,0)/pts.length;const pad=110*u;
+  let zf=20;for(;zf>3;zf--){const xs=pts.map(p=>mx(p.lng,zf)),ys=pts.map(p=>my(p.lat,zf));
+    const mpp=156543.03*Math.cos(lat0*RAD)/2**zf;const minPx=80/mpp;
+    if(Math.max(Math.max(...xs)-Math.min(...xs),minPx)<=W-2*pad&&Math.max(Math.max(...ys)-Math.min(...ys),minPx)<=H-2*pad)break}
+  const xs=pts.map(p=>mx(p.lng,zf)),ys=pts.map(p=>my(p.lat,zf));const cxw=(Math.min(...xs)+Math.max(...xs))/2,cyw=(Math.min(...ys)+Math.max(...ys))/2;
+  const SX=(lng)=>W/2+mx(lng,zf)-cxw,SY=(lat)=>H/2+my(lat,zf)-cyw;
+  // 背景タイル（ズーム18までのタイルを拡大して使う）
+  const T=TILE[bg]||TILE.photo;let tileOk=false;
+  if(bg!=="none"){const tz=Math.min(zf,T.max),k=2**(zf-tz),ts=256*k;const x0w=cxw-W/2,y0w=cyw-H/2;
+    const tx0=Math.floor(x0w/ts),tx1=Math.floor((x0w+W)/ts),ty0=Math.floor(y0w/ts),ty1=Math.floor((y0w+H)/ts);const jobs=[];
+    for(let tx=tx0;tx<=tx1;tx++)for(let ty=ty0;ty<=ty1;ty++)jobs.push(loadTile(T.url.replace("{z}",tz).replace("{x}",tx).replace("{y}",ty)).then(b=>{if(b){x.drawImage(b,tx*ts-x0w,ty*ts-y0w,ts,ts);tileOk=true}}));
+    await Promise.all(jobs);if(tileOk&&bg==="photo"){x.fillStyle="rgba(255,255,255,.12)";x.fillRect(0,0,W,H)}}
+  if(!tileOk){x.strokeStyle="#e6e9e2";x.lineWidth=u;const mpp=156543.03*Math.cos(lat0*RAD)/2**zf,st=[1,2,5,10,20,50,100,200,500].find(v=>v/mpp>=70*u)||1000,sp=st/mpp;x.beginPath();for(let v=(W/2)%sp;v<W;v+=sp){x.moveTo(v,0);x.lineTo(v,H)}for(let v=(H/2)%sp;v<H;v+=sp){x.moveTo(0,v);x.lineTo(W,v)}x.stroke()}
+  // 撮影位置・方向・番号
+  const R=56*u,ink="#1f242b",onPhoto=tileOk&&bg==="photo";
+  list.forEach((p,i)=>{if(!hasPos(p))return;const X=SX(p.lng),Y=SY(p.lat);let lx=X,ly=Y;
+    if(hasDir(p)){const h=p.heading*RAD,half=Math.max(8,Math.min(60,(p.fov||60)/2))*RAD;x.beginPath();x.moveTo(X,Y);x.arc(X,Y,R,h-half-Math.PI/2,h+half-Math.PI/2);x.closePath();
+      x.fillStyle=onPhoto?"rgba(190,230,70,.38)":"rgba(159,196,58,.32)";x.fill();x.strokeStyle=onPhoto?"#e8ff9a":"rgba(110,150,25,.95)";x.lineWidth=1.6*u;x.stroke();lx=X+Math.sin(h)*(R+11*u);ly=Y-Math.cos(h)*(R+11*u)}
+    x.beginPath();x.arc(X,Y,4*u,0,7);x.fillStyle=ink;x.fill();x.lineWidth=1.5*u;x.strokeStyle="#fff";x.stroke();
+    x.beginPath();x.arc(lx,ly,11.5*u,0,7);x.fillStyle=ink;x.fill();x.lineWidth=2*u;x.strokeStyle="#fff";x.stroke();
+    x.fillStyle="#fff";x.font=`700 ${(i+1)>99?9*u:11.5*u}px ${F}`;x.textAlign="center";x.textBaseline="middle";x.fillText(String(i+1),lx,ly+.5*u)});
+  // 方位記号・縮尺・出典（白地の枠に載せる）
+  const plate=(px,py,pw,ph)=>{x.fillStyle="rgba(255,255,255,.88)";x.fillRect(px,py,pw,ph)};
+  plate(W-58*u,10*u,48*u,52*u);x.save();x.translate(W-34*u,42*u);x.fillStyle=ink;x.strokeStyle=ink;x.lineWidth=1.2*u;x.beginPath();x.moveTo(0,-16*u);x.lineTo(7*u,10*u);x.lineTo(0,5*u);x.closePath();x.fill();x.beginPath();x.moveTo(0,-16*u);x.lineTo(-7*u,10*u);x.lineTo(0,5*u);x.closePath();x.stroke();x.font=`700 ${11*u}px ${F}`;x.textAlign="center";x.textBaseline="bottom";x.fillText("N",0,-17*u);x.restore();
+  const mpp=156543.03*Math.cos(lat0*RAD)/2**zf;const bl=[1,2,5,10,20,50,100,200,500,1000,2000].find(v=>v/mpp>=90*u)||5000,bw=bl/mpp,bx=16*u,by=H-18*u;
+  plate(bx-8*u,by-24*u,bw+64*u,32*u);x.strokeStyle=ink;x.lineWidth=2*u;x.beginPath();x.moveTo(bx,by-7*u);x.lineTo(bx,by);x.lineTo(bx+bw,by);x.lineTo(bx+bw,by-7*u);x.stroke();
+  x.fillStyle=ink;x.font=`500 ${11*u}px ${F}`;x.textAlign="left";x.textBaseline="bottom";x.fillText(bl>=1000?bl/1000+" km":bl+" m",bx+bw+7*u,by+1*u);
+  if(tileOk){x.font=`400 ${9*u}px ${F}`;const tw=x.measureText(T.credit).width;plate(W-tw-16*u,H-20*u,tw+12*u,16*u);x.fillStyle="#333";x.textAlign="right";x.textBaseline="bottom";x.fillText(T.credit,W-10*u,H-6*u)}
   return c.toDataURL("image/png")}
 $("expGo").onclick=async()=>{const fmt=document.querySelector("input[name=exf]:checked").value,s=curSite(),list=sitePhotos(),st=$("expStatus");if(!list.length&&fmt!=="dd"){st.textContent="写真がありません";return}
   $("expGo").disabled=true;st.classList.remove("err");
@@ -740,7 +765,7 @@ $("expGo").onclick=async()=>{const fmt=document.querySelector("input[name=exf]:c
 async function buildDDXLSX(s,list,st){await loadScript("https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js");
   const wb=new ExcelJS.Workbook();wb.creator="NEXEED株式会社";const F={name:"游ゴシック",size:9},FB={...F,bold:true},thin={style:"thin",color:{argb:"FF333333"}},box={top:thin,left:thin,bottom:thin,right:thin},lab={type:"pattern",pattern:"solid",fgColor:{argb:"FFF1F2F0"}};
   const ws=wb.addWorksheet("DD Finding List",{pageSetup:{paperSize:9,orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0},views:[{state:"frozen",ySplit:3}]});
-  const cols=[["No.",6],["Category\n分類",13],["Sub-category\n小分類",14],["Requirement\n要件",34],["Consultant Finding\n所見",46],["判定",7],["状態",8],["情報源・照会先",18],["Risk Category\n(High/Medium/Low)",11],["Mitigation Plan\n対策",34],["Risk Category When Mitigation Plan Is Implemented",13],["写真No.",10],["BDC Comments",18]];
+  const cols=[["No.",6],["Category\n分類",13],["Sub-category\n小分類",14],["Requirement\n要件",34],["Consultant Finding\n所見",46],["判定",7],["状態",8],["情報源・照会先",18],["Risk Category\n(High/Medium/Low)",11],["Mitigation Plan\n対策",34],["Risk Category When Mitigation Plan Is Implemented",13],["写真No.",10],["Comments\nコメント",18]];
   ws.columns=cols.map(c=>({width:c[1]}));
   ws.mergeCells(1,1,1,cols.length);const t=ws.getCell(1,1);t.value=`Data Center Site Due Diligence Finding List ／ ${s.name}`;t.font={name:"游ゴシック",size:13,bold:true};ws.getRow(1).height=24;
   ws.mergeCells(2,1,2,cols.length);ws.getCell(2,1).value=`所在地：${s.address||"—"}　調査日：${fmtYMD(s.date)||"—"}　出力日：${fmtYMD(toLocal().slice(0,10))}　作成：NEXEED株式会社`;ws.getCell(2,1).font=F;
@@ -767,7 +792,7 @@ async function buildKMZ(s,list,st){await loadScript("https://cdnjs.cloudflare.co
     pm+=`<Placemark><name>No.${r.no} ${xe(r.title||r.cat)}</name><description><![CDATA[<img src="files/${fn}" width="480"><br><b>${xe(r.at)}</b>　${xe(r.dirTxt)}<br>${xe(r.memo).replace(/\n/g,"<br>")}]]></description><Style><IconStyle><scale>1.2</scale>${hasDir(p)?`<heading>${Math.round(p.heading)}</heading>`:""}<Icon><href>files/arrow.png</href></Icon></IconStyle></Style><Point><coordinates>${p.lng.toFixed(7)},${p.lat.toFixed(7)},0</coordinates></Point></Placemark>\n`}
   zip.file("doc.kml",`<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${xe(s.name)} 現地調査</name>\n${pm}</Document></kml>`);
   download(`現地調査_${safeName(s.name)}_${stamp()}.kmz`,await zip.generateAsync({type:"blob"}))}
-async function buildHTML(s,list,st){const plot=plotPNG(list);let ph="";
+async function buildHTML(s,list,st){st.textContent="位置図を作成しています…";const plot=await plotPNG(list,1800,1240,expBg());let ph="";
   for(let i=0;i<list.length;i++){st.textContent=`写真をまとめています… ${i+1}/${list.length}`;const p=list[i],r=rowOf(p,i),d=await fullURL(p);
     ph+=`<section class="ph"><div class="img">${d?`<img src="${d}">`:""}</div><table><tr><th>写真No.</th><td>${r.no}</td><th>撮影日時</th><td>${esc(r.at)}</td></tr><tr><th>区分</th><td>${esc(r.cat)||"—"}</td><th>撮影方向</th><td>${esc(r.dirTxt)}</td></tr><tr><th>件名</th><td colspan="3">${esc(r.title)||"—"}</td></tr><tr><th>撮影位置</th><td colspan="3">${esc(r.pos)}</td></tr><tr><th>撮影者</th><td colspan="3">${esc(r.by)||"—"}</td></tr><tr><th>所見</th><td colspan="3">${esc(r.memo).replace(/\n/g,"<br>")||"—"}</td></tr></table></section>`}
   const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>現地調査報告書 ${esc(s.name)}</title><style>@page{size:A4;margin:14mm 13mm}*{box-sizing:border-box}body{font-family:"Yu Gothic","游ゴシック","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Meiryo",sans-serif;font-size:10pt;line-height:1.55;margin:0;color:#1a1d21}
@@ -784,7 +809,7 @@ async function buildXLSX(s,list,st){await loadScript("https://cdnjs.cloudflare.c
   const info=[["現場名",s.name],["所在地",s.address],["顧客・依頼元",s.client],["調査日",fmtYMD(s.date)],["調査目的",s.purpose],["調査者",s.team],["写真枚数",list.length+"枚"]];
   info.forEach((r,i)=>{const n=3+i;w1.mergeCells(`A${n}:B${n}`);w1.mergeCells(`C${n}:F${n}`);const a=w1.getCell(`A${n}`),c=w1.getCell(`C${n}`);a.value=r[0];c.value=r[1]||"—";a.font=FB;c.font=F;a.fill=lab;a.alignment=wrap;c.alignment=wrap;["A","B","C","D","E","F"].forEach(k=>w1.getCell(`${k}${n}`).border=box);w1.getRow(n).height=22});
   const pr=3+info.length+1;w1.getCell(`A${pr}`).value="調査位置図";w1.getCell(`A${pr}`).font={...FB,size:11};
-  w1.addImage(wb.addImage({base64:plotPNG(list),extension:"png"}),{tl:{col:0,row:pr},ext:{width:690,height:475}});for(let r=pr+1;r<=pr+25;r++)w1.getRow(r).height=15;
+  st.textContent="位置図を作成しています…";w1.addImage(wb.addImage({base64:await plotPNG(list,1800,1240,expBg()),extension:"png"}),{tl:{col:0,row:pr},ext:{width:690,height:475}});for(let r=pr+1;r<=pr+25;r++)w1.getRow(r).height=15;
   const hr=pr+27;["No.","撮影日時","区分","件名","撮影方向","撮影者"].forEach((h,i)=>{const c=w1.getRow(hr).getCell(i+1);c.value=h;c.font=FB;c.fill=lab;c.border=box;c.alignment={...wrap,horizontal:"center"}});
   list.forEach((p,i)=>{const r=rowOf(p,i),row=w1.getRow(hr+1+i);[r.no,r.at,r.cat,r.title,r.dirTxt,r.by].forEach((v,j)=>{const c=row.getCell(j+1);c.value=v;c.font=F;c.border=box;c.alignment={...wrap,horizontal:j===0?"center":"left"}});row.height=20});
   const w2=wb.addWorksheet("写真台帳",{pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0}});w2.columns=[{width:58},{width:11},{width:34}];
