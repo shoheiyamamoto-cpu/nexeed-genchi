@@ -219,7 +219,7 @@ textarea{resize:vertical;min-height:72px}select{height:44px}
     <div class="flash" id="flash"></div>
   </div>
   <div class="mini"><div id="miniMap"></div><div class="upq" id="upq" hidden></div>
-    <div class="mapbtns"><button class="mbtn" id="miniFollow">現在地</button><button class="mbtn" id="miniFit">全体</button></div></div>
+    <div class="mapbtns"><button class="mbtn on" id="miniFollow">現在地</button><button class="mbtn" id="miniFit">全体</button></div></div>
   <input type="file" id="fileCam" accept="image/*" capture="environment" hidden>
   <input type="file" id="filePick" accept="image/*,.heic,.heif" multiple hidden>
 </div>
@@ -436,7 +436,7 @@ function updateMeMarkers(){
       m._me=L.marker([sens.lat,sens.lng],{icon:L.divIcon({className:"me",html:meSVG(),iconSize:[90,90],iconAnchor:[45,45]}),interactive:false,zIndexOffset:1000}).addTo(m._meL)}
     else{m._me.setLatLng([sens.lat,sens.lng]);m._acc.setLatLng([sens.lat,sens.lng]).setRadius(sens.acc||10);const el=m._me.getElement();if(el)el.innerHTML=meSVG()}
   });
-  if(mini&&follow&&isNum(sens.lat)&&view==="shoot"){const z=Math.max(mini.getZoom(),18);mini.setView([sens.lat,sens.lng],z,{animate:false})}
+  if(mini&&follow&&isNum(sens.lat)&&view==="shoot"&&!mini._busy){const pt=mini.latLngToContainerPoint([sens.lat,sens.lng]),sz=mini.getSize();if(Math.abs(pt.x-sz.x/2)>4||Math.abs(pt.y-sz.y/2)>4)mini.setView([sens.lat,sens.lng],mini.getZoom(),{animate:false})}
 }
 function fitMap(m){if(!m)return;const pts=sitePhotos().filter(hasPos).map(p=>[p.lat,p.lng]);if(isNum(sens.lat)&&!pts.length)pts.push([sens.lat,sens.lng]);
   if(!pts.length)return;if(pts.length===1)m.setView(pts[0],19);else m.fitBounds(pts,{padding:[50,50],maxZoom:20})}
@@ -451,7 +451,11 @@ function show(v){view=VIEWS.includes(v)?v:"shoot";VIEWS.forEach(x=>$("v-"+x).hid
 }
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>show(b.dataset.v));
 $("hsite").onclick=()=>show("sites");
-$("miniFollow").onclick=()=>{follow=true;$("miniFollow").classList.add("on");updateMeMarkers()};
+$("miniFollow").onclick=()=>{follow=true;$("miniFollow").classList.add("on");if(mini&&isNum(sens.lat))mini.setView([sens.lat,sens.lng],Math.max(mini.getZoom(),18),{animate:false});updateMeMarkers()};
+// ミニ地図：指で動かしたら追従を止める（「現在地」で再開）。ピンチ中は再センタリングしない
+function setupMini(m){m.touchZoom.disable();m.options.touchZoom="center";m.touchZoom.enable();
+  m.on("dragstart",()=>{follow=false;$("miniFollow").classList.remove("on")});
+  m.on("zoomstart",()=>{m._busy=true});m.on("zoomend",()=>{setTimeout(()=>{m._busy=false},150)})}
 $("miniFit").onclick=()=>{follow=false;$("miniFollow").classList.remove("on");fitMap(mini)};
 $("bigFit").onclick=()=>fitMap(big);
 $("bigMe").onclick=()=>{if(isNum(sens.lat))big.setView([sens.lat,sens.lng],19)};
@@ -835,7 +839,7 @@ function gateStart(){
     const o=await startOrient();$("gO").textContent=o?"OK":"使えません";$("gO").className=o?"ok":"ng";
     const g=await startGeo();$("gP").textContent=g?`OK（±${Math.round(sens.acc)}m）`:(sens.geoErr||"使えません");$("gP").className=g?"ok":"ng";
     await startCamera();$("gC").textContent=stream?"OK":"使えません";$("gC").className=stream?"ok":"ng";
-    sens.watching=true;setTimeout(()=>{$("gate").hidden=true;if(!mini){mini=makeMap($("miniMap"));drawPhotoMarkers(mini)}mini.invalidateSize();updateMeMarkers();if(!isNum(sens.lat))fitMap(mini);onSensor()},g&&stream?600:1800)};
+    sens.watching=true;setTimeout(()=>{$("gate").hidden=true;if(!mini){mini=makeMap($("miniMap"));setupMini(mini);drawPhotoMarkers(mini)}mini.invalidateSize();updateMeMarkers();if(!isNum(sens.lat))fitMap(mini);onSensor()},g&&stream?600:1800)};
 }
 
 // ---------------- 起動
