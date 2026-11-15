@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NEXEED 現地調査</title>
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#ffffff">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
+<style>
+/* Layout: 撮影タブは上にカメラ・下に地図の2段。撮るたびに下の地図に番号と向きが増える。ほかは地図／写真／現場のタブ。 */
+:root{
+  --bg:#eef1f5; --surface:#ffffff; --fg:#131b26; --muted:#64718a; --line:#dbe1ea;
+  --brand:#ffffff; --ink:#2a2f36; --lime:#9fc43a; --lime-soft:#eef5d9;
+  --ok:#1f8a5b; --warn:#c7791f; --info:#2f6fd6; --bad:#c43c3c; --chip:#e9edf3;
+  --font:"Noto Sans JP","Hiragino Sans","Yu Gothic","游ゴシック",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --tabh:58px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0f141b; --surface:#1a212b; --fg:#e9eef5; --muted:#97a3b6; --line:#2b3542; --brand:#1a212b; --lime-soft:#2b3620; --chip:#26303c;
+  --ok:#3fbf85; --warn:#e0a04f; --info:#6c9af0; --bad:#e36b6b; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.5;overflow:hidden;-webkit-text-size-adjust:100%}
+button{font:inherit}
+img{max-width:100%}
+[hidden]{display:none!important}
+.gut{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
+.hdr{position:fixed;top:0;left:0;right:0;padding-top:env(safe-area-inset-top);height:calc(52px + env(safe-area-inset-top));background:var(--brand);border-bottom:1px solid var(--line);z-index:1000;display:flex;align-items:center;gap:10px}
+.hdr::after{content:"";position:absolute;left:16px;right:16px;top:env(safe-area-inset-top);height:3px;background:var(--lime)}
+.nxl{display:block;height:16px;width:auto;overflow:visible;color:var(--fg)}
+.logo{display:flex;align-items:center;gap:8px;flex:none}
+.logo small{font-weight:500;letter-spacing:.06em;font-size:11px;color:var(--muted);padding-left:10px;border-left:1px solid var(--line)}
+.hsite{flex:1;min-width:0;text-align:right;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:none;border:0;cursor:pointer;padding:6px 0}
+.hbtn{background:var(--chip);border:0;color:var(--fg);border-radius:8px;padding:6px 11px;font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap}
+.view{position:fixed;top:calc(52px + env(safe-area-inset-top));bottom:calc(var(--tabh) + env(safe-area-inset-bottom));left:0;right:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.pad{padding-top:14px;padding-bottom:24px}
+.wrap{max-width:720px;margin:0 auto}
+.tabs{position:fixed;left:0;right:0;bottom:0;height:calc(var(--tabh) + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:var(--surface);border-top:1px solid var(--line);display:flex;z-index:1000}
+.tabs button{flex:1;border:0;background:none;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:500;cursor:pointer}
+.tabs svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabs button.on{color:var(--fg)}.tabs button.on svg{stroke:var(--lime)}
+.btn{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:500;padding:10px 16px;border-radius:10px;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none}
+.btn.primary{background:var(--lime);border-color:var(--lime);color:#1c2410;font-weight:700}
+.btn.small{padding:6px 12px;min-height:34px;font-size:13px;border-radius:8px}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5}
+input,textarea,select{font:inherit;font-size:16px;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:72px}select{height:44px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--muted);letter-spacing:.05em;min-width:0}
+.form .wide{grid-column:1/-1}
+@media (max-width:420px){.form{grid-template-columns:1fr}}
+.acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}.acts .grow{flex:1}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--chip);border-radius:999px;padding:4px 11px;font-size:12px;cursor:pointer;color:var(--fg);white-space:nowrap}
+.chip.on{background:var(--ink);color:#f3f5f7;border-color:var(--ink)}
+.pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:999px;white-space:nowrap;border:1px solid currentColor}
+.pill.warn{color:var(--warn)}.pill.mut{color:var(--muted)}
+.empty{border:1px dashed var(--line);border-radius:14px;padding:26px 16px;text-align:center;color:var(--muted);font-size:14px;line-height:1.7}
+.empty b{display:block;color:var(--fg);margin-bottom:6px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tabh) + env(safe-area-inset-bottom) + 14px);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13px;z-index:3000;max-width:92vw;width:max-content;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* 開始・ログイン */
+.gate{position:fixed;inset:0;z-index:2000;background:var(--surface);display:flex;align-items:center;justify-content:center;padding:24px;overflow-y:auto}
+.gate .box{width:100%;max-width:400px;display:flex;flex-direction:column;gap:16px;text-align:center}
+.gate .nxl{height:34px;margin:0 auto}
+.gate .bar{width:56px;height:3px;background:var(--lime);margin:0 auto}
+.gate h1{font-size:14px;letter-spacing:.24em;color:var(--muted);font-weight:500;margin:0}
+.gate p{font-size:14px;line-height:1.75;color:var(--muted);margin:0;text-align:left}
+.gate .err{color:var(--bad)}
+.perm{display:flex;flex-direction:column;gap:8px;text-align:left}
+.perm .r{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:14px}
+.perm .r b{font-weight:500}
+.perm .r span{font-family:var(--mono);font-size:12px;color:var(--muted)}
+.perm .r span.ok{color:var(--ok)}.perm .r span.ng{color:var(--bad)}
+
+/* 撮影 */
+#v-shoot{display:flex;flex-direction:column;background:#000}
+.cam{position:relative;flex:0 0 56%;overflow:hidden;background:#000}
+.cam video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cam .hud{position:absolute;left:10px;right:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap;pointer-events:none}
+.tag{background:rgba(0,0,0,.55);color:#fff;border-radius:8px;padding:4px 9px;font:500 12px var(--mono);backdrop-filter:blur(4px)}
+.tag.ok{box-shadow:inset 3px 0 0 var(--lime)}.tag.ng{box-shadow:inset 3px 0 0 #ff8a7a}
+.compass{position:absolute;left:0;right:0;bottom:84px;height:34px;overflow:hidden;pointer-events:none;-webkit-mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent);mask-image:linear-gradient(90deg,transparent,#000 20%,#000 80%,transparent)}
+.compass canvas{width:100%;height:100%}
+.compass::after{content:"";position:absolute;left:50%;top:0;width:2px;height:12px;margin-left:-1px;background:var(--lime)}
+.shutterrow{position:absolute;left:0;right:0;bottom:12px;display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+.shutter{width:68px;height:68px;border-radius:50%;border:4px solid #fff;background:rgba(255,255,255,.25);cursor:pointer;position:relative}
+.shutter::after{content:"";position:absolute;inset:5px;border-radius:50%;background:#fff;transition:transform .08s}
+.shutter:active::after{transform:scale(.9)}
+.shutter:disabled{opacity:.4}
+.side{width:64px;display:flex;flex-direction:column;align-items:center;gap:4px;color:#fff;font-size:11px;background:none;border:0;cursor:pointer}
+.side img,.side .ph{width:48px;height:48px;border-radius:9px;object-fit:cover;border:2px solid #fff;background:#333}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .25s}
+.flash.on{opacity:.75;transition:none}
+.camoff{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:#d9dee6;font-size:13px;text-align:center;padding:20px;line-height:1.7}
+.mini{position:relative;flex:1;min-height:0;background:var(--bg)}
+#miniMap,#bigMap{position:absolute;inset:0}
+.mapbtns{position:absolute;right:10px;top:10px;z-index:500;display:flex;flex-direction:column;gap:6px}
+.mbtn{background:var(--surface);border:1px solid var(--line);color:var(--fg);border-radius:9px;padding:7px 10px;font-size:12px;font-weight:500;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.12);white-space:nowrap}
+.mbtn.on{background:var(--ink);color:#f3f5f7;border-color:var(--ink)}
+.upq{position:absolute;left:10px;top:10px;z-index:500;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:5px 9px;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,.12)}
+
+/* 地図のマーカー */
+.pm{background:none;border:0}
+.pm svg{overflow:visible;display:block}
+.me{background:none;border:0}
+
+/* 写真 */
+.list{display:flex;flex-direction:column;gap:8px}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px;display:grid;grid-template-columns:96px 1fr;gap:12px;align-items:start;cursor:pointer}
+.pcard img{width:96px;height:72px;border-radius:7px;object-fit:cover;background:var(--chip);display:block}
+.pcard .tx{min-width:0}
+.pcard .t1{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.pcard .no{font-family:var(--mono);font-weight:500;font-size:13px}
+.pcard .tt{font-weight:700;line-height:1.35;word-break:break-word}
+.pcard .t2{display:flex;gap:4px 10px;flex-wrap:wrap;align-items:center;margin-top:4px;font-size:12px;color:var(--muted)}
+.pcard .dir{font-family:var(--mono);color:var(--fg)}
+.day{font-size:12px;color:var(--muted);font-family:var(--mono);margin:14px 0 6px;display:flex;justify-content:space-between}
+.day:first-child{margin-top:0}
+.tools{display:flex;gap:8px;margin-bottom:10px;align-items:center;flex-wrap:wrap}
+.tools input{flex:1;min-width:10em}
+.count{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.scard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;gap:12px;align-items:center;cursor:pointer}
+.scard.cur{border-color:var(--lime);box-shadow:inset 4px 0 0 var(--lime)}
+.scard .n{flex:1;min-width:0;font-weight:700;line-height:1.4}
+.scard .n small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.scard b{font-family:var(--mono);font-size:20px}
+.scard b small{display:block;font-size:10px;color:var(--muted);font-family:var(--font);font-weight:400;text-align:right}
+
+/* シート */
+.sheet{position:fixed;inset:0;z-index:1500;background:var(--bg);display:flex;flex-direction:column}
+.sheet .bar{padding-top:env(safe-area-inset-top);height:calc(52px + env(safe-area-inset-top));background:var(--brand);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex:none}
+.sheet .bar b{flex:1;font-size:15px;text-align:center;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sheet .body{flex:1;overflow-y:auto;padding-top:14px;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+.photo{width:100%;max-height:52vh;object-fit:contain;background:#0b1320;border-radius:12px;display:block}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;margin:12px 0;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.facts dt{color:var(--muted);white-space:nowrap}.facts dd{margin:0;font-family:var(--mono);word-break:break-all}
+.links{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:13px}.links a{color:var(--info)}
+.confirm{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--bad);flex-wrap:wrap}
+.dlg{position:fixed;inset:0;z-index:2500;background:rgba(10,14,20,.5);display:flex;align-items:center;justify-content:center;padding:16px}
+.dlg .box{background:var(--surface);border-radius:16px;padding:18px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:10px;max-height:92vh;overflow-y:auto}
+.dlg .box>b{font-size:16px}
+.opt{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:14px;cursor:pointer;align-items:start}
+.opt input{width:auto;margin-top:4px}.opt small{grid-column:2;color:var(--muted);font-size:12px;line-height:1.5}
+.status{font-size:13px;color:var(--muted);min-height:18px;font-family:var(--mono);word-break:break-all}
+.status.err{color:var(--bad)}
+.leaflet-container{font-family:var(--font)}
+</style></head><body>
+
+<svg width="0" height="0" style="position:absolute"><defs><symbol id="nx" viewBox="0 0 216 40"><g fill="none" stroke="currentColor" stroke-linejoin="bevel"><g stroke-width="4.4"><path d="M2.2 35V5L21.8 35V5"/><path d="M58 7.2H42.2V32.8H58M42.2 20H56.5"/><path d="M74 5L86.6 20L74 35" style="stroke:#9fc43a"/></g><g stroke-width="1.5"><path d="M100.5 5L86.8 20L100.5 35"/><path d="M136 5.8H120.8V34.2H136M120.8 20H135"/><path d="M172 5.8H156.8V34.2H172M156.8 20H171"/><path d="M192.8 5.8H199A14.2 14.2 0 0 1 199 34.2H192.8Z"/></g></g></symbol></defs></svg>
+
+<!-- ログイン・調査開始 -->
+<div class="gate" id="gate"><div class="box">
+  <svg class="nxl" viewBox="0 0 216 40" style="width:184px" aria-label="NEXEED"><use href="#nx"/></svg>
+  <div class="bar"></div><h1>現地調査</h1>
+  <div id="gateBody"><p>読み込み中…</p></div>
+</div></div>
+
+<div class="hdr gut">
+  <div class="logo"><svg class="nxl" viewBox="0 0 216 40" style="width:86px" aria-label="NEXEED"><use href="#nx"/></svg><small>現地調査</small></div>
+  <button class="hsite" id="hsite"></button>
+  <button class="hbtn" id="expOpen">書き出し</button>
+</div>
+
+<!-- 撮影（上：カメラ、下：地図） -->
+<div class="view" id="v-shoot">
+  <div class="cam" id="cam">
+    <video id="video" playsinline muted autoplay></video>
+    <div class="camoff" id="camOff"><div>カメラを起動しています…</div></div>
+    <div class="hud"><span class="tag" id="tPos">位置 —</span><span class="tag" id="tDir">方位 —</span><span class="tag" id="tCnt">0枚</span></div>
+    <div class="compass"><canvas id="cmp" width="720" height="68"></canvas></div>
+    <div class="shutterrow">
+      <button class="side" id="lastBtn" aria-label="最後に撮った写真"><span class="ph" id="lastPh"></span><span>直前の写真</span></button>
+      <button class="shutter" id="shutter" aria-label="撮影"></button>
+      <button class="side" id="altBtn"><span class="ph" style="display:flex;align-items:center;justify-content:center;font-size:20px">＋</span><span>標準カメラ等</span></button>
+    </div>
+    <div class="flash" id="flash"></div>
+  </div>
+  <div class="mini"><div id="miniMap"></div><div class="upq" id="upq" hidden></div>
+    <div class="mapbtns"><button class="mbtn" id="miniFollow">現在地</button><button class="mbtn" id="miniFit">全体</button></div></div>
+  <input type="file" id="fileCam" accept="image/*" capture="environment" hidden>
+  <input type="file" id="filePick" accept="image/*,.heic,.heif" multiple hidden>
+</div>
+
+<!-- 地図 -->
+<div class="view" id="v-map" hidden>
+  <div id="bigMap"></div>
+  <div class="mapbtns"><button class="mbtn" id="layerBtn">航空写真</button><button class="mbtn" id="bigFit">全体</button><button class="mbtn" id="bigMe">現在地</button></div>
+</div>
+
+<!-- 写真 -->
+<div class="view gut pad" id="v-photos" hidden><div class="wrap">
+  <div class="tools"><input id="q" placeholder="件名・所見・区分で検索" autocomplete="off"><span class="count" id="pcount"></span></div>
+  <div class="chips" id="fcat" style="margin-bottom:12px"></div>
+  <div id="plist"></div>
+</div></div>
+
+<!-- 現場 -->
+<div class="view gut pad" id="v-sites" hidden><div class="wrap">
+  <div class="tools"><button class="btn primary" id="sNew" style="flex:1">＋ 現場を追加</button></div>
+  <div class="panel" id="sForm" hidden style="margin-bottom:12px">
+    <b id="sFormTtl" style="display:block;margin-bottom:10px">現場を追加</b>
+    <div class="form">
+      <label class="wide">現場名<input id="sName" placeholder="例：川西 候補地（モジュールDC）" autocomplete="off"></label>
+      <label>顧客・依頼元<input id="sClient" autocomplete="off"></label>
+      <label>調査日<input id="sDate" type="date"></label>
+      <label class="wide">所在地<input id="sAddr" autocomplete="off"></label>
+      <label class="wide">調査の目的<input id="sPurpose" placeholder="例：受電引込位置・搬入経路・敷地高低差の確認" autocomplete="off"></label>
+      <label class="wide">調査者<input id="sTeam" placeholder="例：山本、福田、原田" autocomplete="off"></label>
+      <label class="wide">メモ<textarea id="sMemo"></textarea></label>
+    </div>
+    <div class="acts"><button class="btn primary grow" id="sSave">保存</button><button class="btn" id="sCancel">キャンセル</button><span id="sDelWrap"></span></div>
+  </div>
+  <div class="list" id="slist"></div>
+  <div class="acts" style="margin-top:24px;justify-content:space-between"><span class="count" id="whoami"></span><button class="btn small" id="logout">ログアウト</button></div>
+</div></div>
+
+<div class="tabs">
+  <button data-v="shoot" class="on"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>撮影</button>
+  <button data-v="map"><svg viewBox="0 0 24 24"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2"/></svg>地図</button>
+  <button data-v="photos"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-4 4 3 3-2 6 4"/></svg>写真</button>
+  <button data-v="sites"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V9l7-5 7 5v12"/><path d="M10 21v-6h4v6"/></svg>現場</button>
+</div>
+
+<div class="sheet" id="pSheet" hidden>
+  <div class="bar gut"><button class="hbtn" id="pClose">閉じる</button><b id="pTtl">写真</b><button class="hbtn" id="pSave">保存</button></div>
+  <div class="body gut"><div class="wrap" id="pBody"></div></div>
+</div>
+
+<div class="dlg" id="altDlg" hidden><div class="box">
+  <b>ほかの方法で追加</b>
+  <button class="btn" id="altCam">iPhoneのカメラ画面で撮る</button>
+  <div class="status" style="font-family:var(--font)">シャッターを押した時点の位置・方位を、このアプリが記録します。</div>
+  <button class="btn" id="altPick">撮影済みの写真を取り込む</button>
+  <div class="status" style="font-family:var(--font)">写真に記録された位置・時刻・方位を使います。選択画面の「オプション」で位置情報をオンにしてください。</div>
+  <button class="btn" id="altNo">閉じる</button>
+</div></div>
+
+<div class="dlg" id="expDlg" hidden><div class="box">
+  <b>書き出し</b>
+  <div class="count" id="expSite" style="white-space:normal"></div>
+  <label class="opt"><input type="radio" name="exf" value="xlsx" checked>写真台帳（Excel）<small>1ページ3枚の写真台帳と、調査位置図・写真一覧のシート</small></label>
+  <label class="opt"><input type="radio" name="exf" value="html">調査報告書（HTML）<small>開いて印刷するとPDFになります</small></label>
+  <label class="opt"><input type="radio" name="exf" value="kmz">Google Earth用（KMZ）</label>
+  <label class="opt"><input type="radio" name="exf" value="csv">一覧表（CSV）</label>
+  <div class="status" id="expStatus"></div>
+  <div class="acts" style="margin-top:2px"><button class="btn primary grow" id="expGo">書き出す</button><button class="btn" id="expNo">閉じる</button></div>
+</div></div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script type="module">
+import { firebaseConfig, allowedDomains } from "./config.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, updateDoc, deleteDoc, getDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const pad=n=>String(n).padStart(2,"0");
+const ls={get(k,d=""){try{return localStorage.getItem(k)??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let toastT;const toast=t=>{const e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove("show"),2600)};
+const fmtDT=ts=>{if(!ts)return"—";const d=new Date(ts);return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const fmtT=ts=>{if(!ts)return"";const d=new Date(ts);return `${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const fmtDay=ts=>{const d=new Date(ts);return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${"日月火水木金土"[d.getDay()]}）`};
+const fmtYMD=s=>{if(!s)return"";const[y,m,d]=s.split("-");return `${y}/${+m}/${+d}`};
+const toLocal=ts=>{const d=new Date(ts||Date.now());return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`};
+const isNum=v=>typeof v==="number"&&isFinite(v);
+const RAD=Math.PI/180;
+const DIR16=["北","北北東","北東","東北東","東","東南東","南東","南南東","南","南南西","南西","西南西","西","西北西","北西","北北西"];
+const norm360=h=>((h%360)+360)%360;
+const dirName=h=>DIR16[Math.round(norm360(h)/22.5)%16];
+const dirLabel=h=>isNum(h)?`${dirName(h)} ${Math.round(norm360(h))}°`:"方向なし";
+const CATS=["全景","敷地・境界","道路・搬入経路","受電・電柱・引込","既存建物","既存設備","地盤・高低差","周辺環境・近隣","支障物・障害物","測定・計測","その他"];
+// 磁北→真北（日本の西偏の概算）
+const declW=(lat,lng)=>7.6+0.32*(lat-37)-0.10*(lng-138);
+const hasPos=p=>isNum(p.lat)&&isNum(p.lng);
+const hasDir=p=>isNum(p.heading);
+
+// ---------------- Firebase
+let fb=null,auth=null,db=null,me=null;
+if(!firebaseConfig){$("gateBody").innerHTML=`<p class="err">Firebaseの設定がまだ入っていません（config.js）。</p>`;throw new Error("no config")}
+fb=initializeApp(firebaseConfig);auth=getAuth(fb);
+db=initializeFirestore(fb,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})});
+const okDomain=email=>allowedDomains.some(d=>String(email||"").toLowerCase().endsWith("@"+d));
+
+function gateLogin(msg){
+  $("gate").hidden=false;
+  $("gateBody").innerHTML=`<div style="display:flex;flex-direction:column;gap:14px"><p>現場写真を「どこで・いつ・どの方向」を付けて記録し、地図に並べるNEXEED社内のアプリです。会社のGoogleアカウントでログインしてください。</p>
+  ${msg?`<p class="err">${esc(msg)}</p>`:""}<button class="btn primary" id="gLogin" style="min-height:52px;font-size:16px">Googleでログイン</button></div>`;
+  $("gLogin").onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){gateLogin("ログインできませんでした："+(e.code||e.message))}};
+}
+// ---------------- センサー（位置・方位）
+const sens={lat:null,lng:null,acc:null,alt:null,posAt:0,heading:null,headAt:0,headAbs:false,geoErr:"",oriErr:"",watching:false};
+let geoWatch=null;
+function startGeo(){
+  if(!("geolocation" in navigator)){sens.geoErr="この端末では位置情報を使えません";return Promise.resolve(false)}
+  return new Promise(res=>{let first=true;
+    geoWatch=navigator.geolocation.watchPosition(p=>{sens.lat=p.coords.latitude;sens.lng=p.coords.longitude;sens.acc=p.coords.accuracy;sens.alt=p.coords.altitude;sens.posAt=Date.now();sens.geoErr="";
+        if(isNum(p.coords.heading)&&p.coords.speed>1&&!sens.headAbs){} onSensor();if(first){first=false;res(true)}},
+      e=>{sens.geoErr=e.code===1?"位置情報が許可されていません":"位置を取得できません";onSensor();if(first){first=false;res(false)}},
+      {enableHighAccuracy:true,maximumAge:2000,timeout:20000});
+  });
+}
+let smooth=null;
+function onOrient(e){
+  let h=null,abs=false;
+  if(isNum(e.webkitCompassHeading)){h=e.webkitCompassHeading;abs=true; if(isNum(sens.lat))h=h-declW(sens.lat,sens.lng)}
+  else if(e.absolute&&isNum(e.alpha)){h=360-e.alpha;abs=true}
+  if(h==null)return;
+  const so=(screen.orientation&&isNum(screen.orientation.angle))?screen.orientation.angle:(isNum(window.orientation)?window.orientation:0);
+  h=norm360(h+so);
+  if(smooth==null)smooth=h;else{let d=((h-smooth+540)%360)-180;smooth=norm360(smooth+d*0.25)}
+  sens.heading=smooth;sens.headAbs=abs;sens.headAt=Date.now();onSensorThrottled();
+}
+async function startOrient(){
+  try{
+    if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){
+      const r=await DeviceOrientationEvent.requestPermission();if(r!=="granted"){sens.oriErr="方位（コンパス）が許可されていません";return false}}
+    if("ondeviceorientationabsolute" in window)addEventListener("deviceorientationabsolute",onOrient);
+    addEventListener("deviceorientation",onOrient);return true;
+  }catch(e){sens.oriErr="方位（コンパス）を使えません";return false}
+}
+let sensT=0;const onSensorThrottled=()=>{const n=Date.now();if(n-sensT>120){sensT=n;onSensor()}};
+function onSensor(){
+  const tp=$("tPos"),td=$("tDir");
+  if(isNum(sens.lat)){tp.textContent=`位置 ±${Math.round(sens.acc)}m`;tp.className="tag "+(sens.acc<=15?"ok":"ng")}else{tp.textContent=sens.geoErr||"位置 取得中…";tp.className="tag ng"}
+  if(isNum(sens.heading)){td.textContent=`${dirName(sens.heading)} ${Math.round(sens.heading)}°`;td.className="tag ok"}else{td.textContent=sens.oriErr||"方位 —";td.className="tag ng"}
+  drawCompassStrip();updateMeMarkers();
+}
+function drawCompassStrip(){const c=$("cmp");const x=c.getContext("2d"),W=c.width,H=c.height;x.clearRect(0,0,W,H);if(!isNum(sens.heading))return;
+  const pxPerDeg=W/120;x.fillStyle="#fff";x.strokeStyle="#fff";x.textAlign="center";x.font=`600 22px "Noto Sans JP",sans-serif`;
+  for(let d=Math.floor(sens.heading-70);d<=sens.heading+70;d++){if(d%5)continue;const X=W/2+(d-sens.heading)*pxPerDeg,n=norm360(d);x.lineWidth=n%45===0?3:1.5;x.beginPath();x.moveTo(X,H);x.lineTo(X,H-(n%45===0?22:n%15===0?14:8));x.stroke();
+    if(n%45===0){x.fillText(["北","北東","東","南東","南","南西","西","北西"][n/45],X,24)}}}
+
+// ---------------- 状態
+let sites=[],photos=[],curSiteId=ls.get("gc.site"),view="shoot",fCat="",unsubP=null;
+const curSite=()=>sites.find(s=>s.id===curSiteId)||null;
+const sitePhotos=()=>photos.slice().sort((a,b)=>(a.takenAt||0)-(b.takenAt||0)||(a.createdAt||0)-(b.createdAt||0));
+const numberOf=p=>sitePhotos().findIndex(x=>x.id===p.id)+1;
+const pending=new Map();// id → 状態（アップロード待ち）
+
+// ---------------- 地図
+const GSI_STD=()=>L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png",{maxNativeZoom:18,maxZoom:21,attribution:'<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">地理院タイル</a>'});
+const GSI_PHOTO=()=>L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg",{maxNativeZoom:18,maxZoom:21,attribution:'<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank">地理院タイル（写真）</a>'});
+function makeMap(el,{photo=false}={}){
+  const m=L.map(el,{zoomControl:false,attributionControl:true,maxZoom:21}).setView([35.68,139.76],16);
+  m._std=GSI_STD();m._ph=GSI_PHOTO();(photo?m._ph:m._std).addTo(m);m._isPhoto=photo;
+  m._pl=L.layerGroup().addTo(m);m._meL=L.layerGroup().addTo(m);return m;
+}
+let mini=null,big=null,follow=true;
+function markerSVG(n,p,sel){
+  const S=120,c=S/2,R=40;let wedge="",lx=c,ly=c;
+  if(hasDir(p)){const half=Math.max(8,Math.min(60,(p.fov||60)/2))*RAD,h=p.heading*RAD;
+    const a0=h-half,a1=h+half,P=a=>[c+Math.sin(a)*R,c-Math.cos(a)*R];const [x0,y0]=P(a0),[x1,y1]=P(a1);
+    wedge=`<path d="M${c} ${c}L${x0.toFixed(1)} ${y0.toFixed(1)}A${R} ${R} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}Z" fill="${sel?"rgba(47,111,214,.3)":"rgba(159,196,58,.35)"}" stroke="${sel?"#2f6fd6":"#6e961a"}" stroke-width="1.5"/>`;
+    lx=c+Math.sin(h)*(R+11);ly=c-Math.cos(h)*(R+11);
+    wedge+=`<line x1="${c}" y1="${c}" x2="${(c+Math.sin(h)*(R)).toFixed(1)}" y2="${(c-Math.cos(h)*(R)).toFixed(1)}" stroke="${sel?"#2f6fd6":"#6e961a"}" stroke-width="1.5"/>`}
+  const r=n>99?13:11.5;
+  return `<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}">${wedge}<circle cx="${c}" cy="${c}" r="3.5" fill="#2a2f36"/><circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="${r}" fill="${sel?"#2f6fd6":"#2a2f36"}" stroke="#fff" stroke-width="2"/><text x="${lx.toFixed(1)}" y="${(ly+4.2).toFixed(1)}" text-anchor="middle" font-family="Noto Sans JP,sans-serif" font-weight="700" font-size="${n>99?10:12}" fill="#fff">${n}</text></svg>`;
+}
+let selId=null;
+function drawPhotoMarkers(m){
+  if(!m)return;m._pl.clearLayers();const list=sitePhotos();
+  list.forEach((p,i)=>{if(!hasPos(p))return;const mk=L.marker([p.lat,p.lng],{icon:L.divIcon({className:"pm",html:markerSVG(i+1,p,p.id===selId),iconSize:[120,120],iconAnchor:[60,60]}),keyboard:false});
+    mk.on("click",()=>{selId=p.id;drawAllMarkers();openSheet(p.id)});m._pl.addLayer(mk)});
+}
+function meSVG(){const S=90,c=45;let w="";if(isNum(sens.heading)){const h=sens.heading*RAD,half=30*RAD,R=38,P=a=>[c+Math.sin(a)*R,c-Math.cos(a)*R];const [x0,y0]=P(h-half),[x1,y1]=P(h+half);
+  w=`<path d="M${c} ${c}L${x0.toFixed(1)} ${y0.toFixed(1)}A${R} ${R} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}Z" fill="rgba(47,111,214,.25)"/>`}
+  return `<svg width="${S}" height="${S}">${w}<circle cx="${c}" cy="${c}" r="8" fill="#2f6fd6" stroke="#fff" stroke-width="3"/></svg>`}
+function updateMeMarkers(){
+  [mini,big].forEach(m=>{if(!m||!isNum(sens.lat))return;
+    if(!m._me){m._acc=L.circle([sens.lat,sens.lng],{radius:sens.acc||10,color:"#2f6fd6",weight:1,fillOpacity:.08,interactive:false}).addTo(m._meL);
+      m._me=L.marker([sens.lat,sens.lng],{icon:L.divIcon({className:"me",html:meSVG(),iconSize:[90,90],iconAnchor:[45,45]}),interactive:false,zIndexOffset:1000}).addTo(m._meL)}
+    else{m._me.setLatLng([sens.lat,sens.lng]);m._acc.setLatLng([sens.lat,sens.lng]).setRadius(sens.acc||10);const el=m._me.getElement();if(el)el.innerHTML=meSVG()}
+  });
+  if(mini&&follow&&isNum(sens.lat)&&view==="shoot"){const z=Math.max(mini.getZoom(),18);mini.setView([sens.lat,sens.lng],z,{animate:false})}
+}
+function fitMap(m){if(!m)return;const pts=sitePhotos().filter(hasPos).map(p=>[p.lat,p.lng]);if(isNum(sens.lat)&&!pts.length)pts.push([sens.lat,sens.lng]);
+  if(!pts.length)return;if(pts.length===1)m.setView(pts[0],19);else m.fitBounds(pts,{padding:[50,50],maxZoom:20})}
+function drawAllMarkers(){drawPhotoMarkers(mini);drawPhotoMarkers(big)}
+
+// ---------------- 画面切り替え
+const VIEWS=["shoot","map","photos","sites"];
+function show(v){view=VIEWS.includes(v)?v:"shoot";VIEWS.forEach(x=>$("v-"+x).hidden=x!==view);
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
+  if(view==="shoot"){startCamera();setTimeout(()=>mini&&mini.invalidateSize(),50)}else stopCamera();
+  if(view==="map"){if(!big){big=makeMap($("bigMap"),{photo:true});$("layerBtn").textContent="地図";drawPhotoMarkers(big);updateMeMarkers();setTimeout(()=>{big.invalidateSize();fitMap(big)},60)}else setTimeout(()=>big.invalidateSize(),60)}
+}
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>show(b.dataset.v));
+$("hsite").onclick=()=>show("sites");
+$("miniFollow").onclick=()=>{follow=true;$("miniFollow").classList.add("on");updateMeMarkers()};
+$("miniFit").onclick=()=>{follow=false;$("miniFollow").classList.remove("on");fitMap(mini)};
+$("bigFit").onclick=()=>fitMap(big);
+$("bigMe").onclick=()=>{if(isNum(sens.lat))big.setView([sens.lat,sens.lng],19)};
+$("layerBtn").onclick=()=>{const m=big;if(m._isPhoto){m.removeLayer(m._ph);m._std.addTo(m);m._isPhoto=false;$("layerBtn").textContent="航空写真"}else{m.removeLayer(m._std);m._ph.addTo(m);m._isPhoto=true;$("layerBtn").textContent="地図"}};
+
+// ---------------- カメラ
+let stream=null;
+async function startCamera(){
+  if(stream||document.hidden)return;
+  const off=$("camOff");off.hidden=false;off.innerHTML="<div>カメラを起動しています…</div>";
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:3840},height:{ideal:2160}},audio:false});
+    const v=$("video");v.srcObject=stream;await v.play().catch(()=>{});off.hidden=true}
+  catch(e){stream=null;off.innerHTML=`<div>カメラを使えません（${esc(e.name||e.message)}）。<br>Safariの「ぁあ」→「Webサイトの設定」でカメラを「許可」にしてください。<br>または右下の「標準カメラ等」から撮影できます。</div><button class="btn small" id="camRetry">もう一度</button>`;
+    const r=$("camRetry");if(r)r.onclick=startCamera}
+}
+function stopCamera(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
+document.addEventListener("visibilitychange",()=>{if(document.hidden)stopCamera();else if(view==="shoot"&&$("gate").hidden)startCamera()});
+const snapSensors=()=>({lat:sens.lat,lng:sens.lng,acc:sens.acc,alt:sens.alt,heading:sens.heading,posOk:isNum(sens.lat)&&Date.now()-sens.posAt<60000,dirOk:isNum(sens.heading)&&Date.now()-sens.headAt<5000});
+$("shutter").onclick=async()=>{
+  const s=curSite();if(!s){toast("先に現場を選んでください");show("sites");return}
+  const v=$("video");if(!stream||!v.videoWidth){toast("カメラが起動していません");return}
+  const ss=snapSensors();const at=Date.now();
+  $("flash").classList.add("on");setTimeout(()=>$("flash").classList.remove("on"),60);
+  const c=document.createElement("canvas");const r=Math.min(1,2400/Math.max(v.videoWidth,v.videoHeight));c.width=Math.round(v.videoWidth*r);c.height=Math.round(v.videoHeight*r);
+  c.getContext("2d").drawImage(v,0,0,c.width,c.height);
+  const f35=26;const fov=2*Math.atan((c.width>=c.height?36:24)/(2*f35))/RAD;
+  savePhoto({canvas:c,takenAt:at,ss,src:"live",fov});
+};
+$("altBtn").onclick=()=>{$("altDlg").hidden=false};
+$("altNo").onclick=()=>{$("altDlg").hidden=true};
+let camSnap=null;
+$("altCam").onclick=()=>{$("altDlg").hidden=true;camSnap={ss:snapSensors(),at:Date.now()};$("fileCam").click()};
+$("altPick").onclick=()=>{$("altDlg").hidden=true;$("filePick").click()};
+$("fileCam").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;const snap=camSnap||{ss:snapSensors(),at:Date.now()};camSnap=null;
+  try{const {im,u}=await loadImage(f);const c=imgToCanvas(im,2400);URL.revokeObjectURL(u);savePhoto({canvas:c,takenAt:snap.at,ss:snap.ss,src:"cam",fov:60})}catch(err){toast("写真を読み込めません")}};
+$("filePick").onchange=async e=>{const fs=[...e.target.files];e.target.value="";let ok=0,np=0;
+  for(const f of fs){try{const ex=await readExif(f);const {im,u}=await loadImage(f);const c=imgToCanvas(im,2400);URL.revokeObjectURL(u);
+    const lat=isNum(ex.latitude)?ex.latitude:null,lng=isNum(ex.longitude)?ex.longitude:null;let h=null;
+    if(isNum(ex.GPSImgDirection)){h=ex.GPSImgDirection;if(String(ex.GPSImgDirectionRef||"T").toUpperCase().startsWith("M"))h=norm360(h-(lat!=null?declW(lat,lng):7.5))}
+    const f35=isNum(ex.FocalLengthIn35mmFormat)&&ex.FocalLengthIn35mmFormat>0?ex.FocalLengthIn35mmFormat:26;
+    const at=ex.DateTimeOriginal instanceof Date&&!isNaN(ex.DateTimeOriginal)?+ex.DateTimeOriginal:(f.lastModified||Date.now());
+    await savePhoto({canvas:c,takenAt:at,ss:{lat,lng,acc:isNum(ex.GPSHPositioningError)?ex.GPSHPositioningError:null,alt:isNum(ex.GPSAltitude)?ex.GPSAltitude:null,heading:h,posOk:lat!=null,dirOk:h!=null},src:"exif",fov:2*Math.atan((c.width>=c.height?36:24)/(2*f35))/RAD});
+    ok++;if(lat==null)np++}catch(err){}}
+  toast(`${ok}枚を取り込みました${np?`（位置なし ${np}枚）`:""}`)};
+
+function loadImage(blob){return new Promise((res,rej)=>{const u=URL.createObjectURL(blob);const im=new Image();im.onload=()=>res({im,u});im.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("decode"))};im.src=u})}
+function imgToCanvas(im,max){const r=Math.min(1,max/Math.max(im.naturalWidth,im.naturalHeight));const c=document.createElement("canvas");c.width=Math.round(im.naturalWidth*r);c.height=Math.round(im.naturalHeight*r);c.getContext("2d").drawImage(im,0,0,c.width,c.height);return c}
+async function readExif(f){if(!window.exifr)return{};try{return await exifr.parse(f,{tiff:true,exif:true,gps:true,ifd1:false,xmp:false,icc:false,iptc:false,translateValues:false})||{}}catch(e){return{}}}
+function canvasJPEG(c,max,q,limit){let m=max,qq=q;
+  for(let i=0;i<8;i++){const r=Math.min(1,m/Math.max(c.width,c.height));const t=document.createElement("canvas");t.width=Math.round(c.width*r);t.height=Math.round(c.height*r);t.getContext("2d").drawImage(c,0,0,t.width,t.height);
+    const u=t.toDataURL("image/jpeg",qq);if(u.length<limit)return{u,w:t.width,h:t.height};qq=Math.max(.5,qq-.06);m=Math.round(m*.88)}
+  throw new Error("画像が大きすぎます")}
+
+// 保存：端末内に先に書き込み、電波が戻れば自動で送信（Firestoreのオフライン保存）
+async function savePhoto({canvas,takenAt,ss,src,fov}){
+  const s=curSite();const ref=doc(collection(db,"photos"));const id=ref.id;
+  const full=canvasJPEG(canvas,1800,.82,900000),th=canvasJPEG(canvas,360,.7,40000);
+  const d={siteId:s.id,by:me.uid,byName:me.displayName||me.email,takenAt,createdAt:Date.now(),src,
+    lat:ss.posOk?ss.lat:null,lng:ss.posOk?ss.lng:null,acc:ss.posOk&&isNum(ss.acc)?Math.round(ss.acc*10)/10:null,alt:ss.posOk&&isNum(ss.alt)?Math.round(ss.alt*10)/10:null,
+    heading:ss.dirOk?Math.round(ss.heading*10)/10:null,posSrc:ss.posOk?(src==="exif"?"exif":"gps"):"",headSrc:ss.dirOk?(src==="exif"?"exif":"compass"):"",
+    fov:Math.round(fov||60),w:full.w,h:full.h,cat:"",title:"",memo:"",thumb:th.u};
+  photos.push({...d,id});pending.set(id,1);renderAll();
+  $("lastPh").outerHTML=`<img id="lastPh" src="${th.u}" alt="">`;
+  try{await setDoc(doc(db,"imgs",id),{data:full.u,siteId:s.id});await setDoc(ref,d);pending.delete(id)}
+  catch(e){pending.delete(id);toast("保存できません："+(e.code||e.message))}
+  renderAll();
+}
+$("lastBtn").onclick=()=>{const l=sitePhotos().slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];if(l)openSheet(l.id)};
+
+// ---------------- 描画
+function pcardHTML(p,n){const flags=[!hasPos(p)?`<span class="pill warn">位置なし</span>`:"",!hasDir(p)?`<span class="pill warn">方向なし</span>`:"",pending.has(p.id)?`<span class="pill mut">送信待ち</span>`:""].join("");
+  return `<div class="pcard" data-p="${p.id}"><img src="${p.thumb||""}" alt=""><div class="tx"><div class="t1"><span class="no">No.${n}</span><span class="tt">${esc(p.title)||esc(p.cat)||"（件名なし）"}</span></div>
+  <div class="t2"><span>${fmtT(p.takenAt)}</span><span class="dir">${dirLabel(p.heading)}</span><span>${esc(p.byName||"")}</span>${flags}</div>
+  ${p.memo?`<div class="t2" style="color:var(--fg)">${esc(p.memo.length>60?p.memo.slice(0,60)+"…":p.memo)}</div>`:""}</div></div>`}
+function renderAll(){
+  const s=curSite(),list=sitePhotos();
+  $("hsite").textContent=s?s.name+" ▾":"現場を選ぶ ▾";
+  $("tCnt").textContent=`${list.length}枚`;
+  const pend=pending.size;$("upq").hidden=!pend;$("upq").textContent=`送信待ち ${pend}枚（電波が戻ると自動で送信）`;
+  drawAllMarkers();
+  const q=$("q").value.trim().toLowerCase();
+  const cats=[...new Set(list.map(p=>p.cat||"未分類"))];
+  $("fcat").innerHTML=cats.length>1?[`<span class="chip ${fCat===""?"on":""}" data-c="">すべて</span>`,...cats.map(c=>`<span class="chip ${fCat===c?"on":""}" data-c="${esc(c)}">${esc(c)}</span>`)].join(""):"";
+  const shown=list.filter(p=>(!fCat||(p.cat||"未分類")===fCat)&&(!q||[p.title,p.memo,p.cat,p.byName].join(" ").toLowerCase().includes(q)));
+  $("pcount").textContent=`${shown.length}/${list.length}枚`;
+  let html="",last="";shown.forEach(p=>{const d=fmtDay(p.takenAt);if(d!==last){html+=`<div class="day"><span>${d}</span></div>`;last=d}html+=pcardHTML(p,numberOf(p))});
+  $("plist").innerHTML=shown.length?`<div class="list">${html}</div>`:`<div class="empty">${s?"<b>まだ写真がありません</b>「撮影」タブのシャッターで撮ると、ここと地図に並びます。":"<b>現場を選んでください</b>"}</div>`;
+  const ss=sites.slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.createdAt||0)-(a.createdAt||0));
+  $("slist").innerHTML=ss.length?ss.map(x=>`<div class="scard ${x.id===curSiteId?"cur":""}" data-s="${x.id}"><div class="n">${esc(x.name)}<small>${[x.client,x.address].filter(Boolean).map(esc).join("　")||"所在地 未登録"}</small><small>${x.date?"調査日 "+fmtYMD(x.date):""}${x.id===curSiteId?"　｜ 調査中の現場":""}</small></div><b>${x.id===curSiteId?list.length:(x.count??"")}<small>${x.id===curSiteId?"枚":""}</small></b><button class="btn small" data-sedit="${x.id}">編集</button></div>`).join("")
+    :`<div class="empty"><b>現場がまだありません</b>「現場を追加」から登録してください。</div>`;
+}
+$("q").addEventListener("input",renderAll);
+$("fcat").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;fCat=c.dataset.c;renderAll()};
+document.addEventListener("click",e=>{const c=e.target.closest("[data-p]");if(c)openSheet(c.dataset.p)});
+
+// ---------------- 現場
+let editSite=null,sDelArm=false;
+function openSiteForm(s){editSite=s||null;sDelArm=false;$("sForm").hidden=false;$("sFormTtl").textContent=s?"現場を編集":"現場を追加";
+  $("sName").value=s?.name||"";$("sClient").value=s?.client||"";$("sDate").value=s?.date||toLocal().slice(0,10);$("sAddr").value=s?.address||"";$("sPurpose").value=s?.purpose||"";$("sTeam").value=s?.team||"";$("sMemo").value=s?.memo||"";renderSDel()}
+function renderSDel(){const w=$("sDelWrap");if(!editSite){w.innerHTML="";return}
+  w.innerHTML=sDelArm?`<span class="confirm">写真もまとめて削除します。元に戻せません。<button class="btn small danger" id="sDelYes">削除する</button><button class="btn small" id="sDelNo">やめる</button></span>`:`<button class="btn danger" id="sDel">この現場を削除</button>`}
+$("sNew").onclick=()=>openSiteForm(null);$("sCancel").onclick=()=>{$("sForm").hidden=true};
+$("sDelWrap").onclick=async e=>{if(e.target.id==="sDel"){sDelArm=true;renderSDel()}else if(e.target.id==="sDelNo"){sDelArm=false;renderSDel()}
+  else if(e.target.id==="sDelYes"){const s=editSite;e.target.disabled=true;try{if(s.id===curSiteId)for(const p of photos){await deleteDoc(doc(db,"imgs",p.id));await deleteDoc(doc(db,"photos",p.id))}
+    await deleteDoc(doc(db,"sites",s.id));if(s.id===curSiteId)setSite("");$("sForm").hidden=true;toast("削除しました")}catch(err){toast("削除できません："+(err.code||err.message))}}};
+$("sSave").onclick=async()=>{const d={name:$("sName").value.trim(),client:$("sClient").value.trim(),date:$("sDate").value,address:$("sAddr").value.trim(),purpose:$("sPurpose").value.trim(),team:$("sTeam").value.trim(),memo:$("sMemo").value.trim()};
+  if(!d.name){toast("現場名を入力してください");return}
+  try{if(editSite)await updateDoc(doc(db,"sites",editSite.id),d);else{const r=doc(collection(db,"sites"));await setDoc(r,{...d,by:me.uid,byName:me.displayName||"",createdAt:Date.now()});setSite(r.id);show("shoot")}
+    $("sForm").hidden=true;toast("保存しました")}catch(e){toast("保存できません："+(e.code||e.message))}};
+$("slist").onclick=e=>{const ed=e.target.closest("[data-sedit]");if(ed){e.stopPropagation();openSiteForm(sites.find(s=>s.id===ed.dataset.sedit));return}
+  const c=e.target.closest("[data-s]");if(c){setSite(c.dataset.s);show("shoot")}};
+function setSite(id){curSiteId=id;ls.set("gc.site",id);selId=null;subscribePhotos();renderAll()}
+function subscribePhotos(){if(unsubP){unsubP();unsubP=null}photos=[];if(!curSiteId){renderAll();return}let first=true;
+  unsubP=onSnapshot(query(collection(db,"photos"),where("siteId","==",curSiteId)),{includeMetadataChanges:true},sn=>{
+    photos=sn.docs.map(d=>({...d.data(),id:d.id}));pending.clear();sn.docs.forEach(d=>{if(d.metadata.hasPendingWrites)pending.set(d.id,1)});renderAll();
+    if(first){first=false;setTimeout(()=>{if(!follow||!isNum(sens.lat))fitMap(mini);if(big)fitMap(big)},200)}},
+    e=>toast("写真を読み込めません："+e.code))}
+$("logout").onclick=()=>signOut(auth);
+
+// ---------------- 写真の詳細
+let openPid=null;
+function closeSheet(){$("pSheet").hidden=true;openPid=null;selId=null;drawAllMarkers()}
+$("pClose").onclick=closeSheet;
+async function openSheet(id){const p=photos.find(x=>x.id===id);if(!p)return;openPid=id;const n=numberOf(p);
+  $("pTtl").textContent=`No.${n}　${fmtDT(p.takenAt)}`;
+  const srcL={gps:"撮影時のGPS",exif:"写真の位置情報",manual:"手動で入力","":"なし"}[p.posSrc||""];
+  const hL={compass:"撮影時のコンパス（真北）",exif:"写真の方位情報",manual:"手動で入力","":"なし"}[p.headSrc||""];
+  $("pBody").innerHTML=`<img class="photo" id="pImg" src="${p.thumb||""}" alt="現場写真 No.${n}">
+  <dl class="facts"><dt>撮影位置</dt><dd>${hasPos(p)?`${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}${p.acc?`（±${Math.round(p.acc)}m）`:""}`:"なし"}　<span style="font-family:var(--font);color:var(--muted)">${srcL}</span></dd>
+  <dt>撮影方向</dt><dd>${dirLabel(p.heading)}　<span style="font-family:var(--font);color:var(--muted)">${hL}</span></dd><dt>撮影者</dt><dd style="font-family:var(--font)">${esc(p.byName||"—")}</dd></dl>
+  <div class="form"><label class="wide">件名<input id="fTitle" value="${esc(p.title)}" placeholder="例：北側前面道路（搬入経路）" autocomplete="off"></label>
+  <label>区分<select id="fCat"><option value="">（未分類）</option>${CATS.map(c=>`<option ${p.cat===c?"selected":""}>${c}</option>`).join("")}</select></label>
+  <label>方向（真北から時計回り°）<input id="fHead" type="number" min="0" max="359" value="${hasDir(p)?Math.round(p.heading):""}" placeholder="未設定"></label>
+  <label class="wide">所見<textarea id="fMemo" rows="4">${esc(p.memo)}</textarea></label>
+  <label class="wide">緯度, 経度<input id="fLL" value="${hasPos(p)?p.lat.toFixed(6)+", "+p.lng.toFixed(6):""}" placeholder="35.658100, 139.701700" autocomplete="off"></label></div>
+  <div class="links">${hasPos(p)?`<a href="https://www.google.com/maps/search/?api=1&query=${p.lat.toFixed(6)},${p.lng.toFixed(6)}" target="_blank" rel="noopener">Googleマップで開く</a><a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.lat.toFixed(6)},${p.lng.toFixed(6)}${hasDir(p)?"&heading="+Math.round(p.heading):""}" target="_blank" rel="noopener">ストリートビューで同じ方向を見る</a>`:""}</div>
+  <div class="acts"><button class="btn primary grow" id="pSave2">保存</button></div>
+  <div class="acts" id="pDelWrap"><button class="btn danger small" id="pDel">この写真を削除</button></div>`;
+  $("pSheet").hidden=false;
+  try{const d=await getDoc(doc(db,"imgs",id));if(openPid===id&&d.exists())$("pImg").src=d.data().data}catch(e){}
+}
+async function savePhotoForm(){const p=photos.find(x=>x.id===openPid);if(!p)return;
+  const u={title:$("fTitle").value.trim(),cat:$("fCat").value,memo:$("fMemo").value.trim()};
+  const hv=$("fHead").value;if(hv===""){if(hasDir(p)){u.heading=null;u.headSrc=""}}else{const h=norm360(+hv);if(!hasDir(p)||Math.round(p.heading)!==Math.round(h)){u.heading=h;u.headSrc="manual"}}
+  const t=$("fLL").value.trim();if(!t){if(hasPos(p)){u.lat=null;u.lng=null;u.posSrc=""}}else{const m=t.match(/(-?\d+(?:\.\d+)?)\s*[,，、\s]\s*(-?\d+(?:\.\d+)?)/);if(!m){toast("緯度・経度は「35.6581, 139.7017」の形で入力してください");return}
+    const lat=+m[1],lng=+m[2];if(!hasPos(p)||Math.abs(lat-p.lat)>1e-6||Math.abs(lng-p.lng)>1e-6){u.lat=lat;u.lng=lng;u.posSrc="manual";u.acc=null}}
+  try{await updateDoc(doc(db,"photos",p.id),u);toast("保存しました")}catch(e){toast("保存できません："+(e.code||e.message))}}
+$("pSave").onclick=savePhotoForm;
+$("pBody").onclick=async e=>{const t=e.target;
+  if(t.id==="pSave2")savePhotoForm();
+  else if(t.id==="pDel")$("pDelWrap").innerHTML=`<span class="confirm">この写真を削除します。元に戻せません。<button class="btn small danger" id="pDelYes">削除する</button><button class="btn small" id="pDelNo">やめる</button></span>`;
+  else if(t.id==="pDelNo")$("pDelWrap").innerHTML=`<button class="btn danger small" id="pDel">この写真を削除</button>`;
+  else if(t.id==="pDelYes"){const id=openPid;t.disabled=true;try{await deleteDoc(doc(db,"photos",id));await deleteDoc(doc(db,"imgs",id));closeSheet();toast("削除しました")}catch(err){toast("削除できません："+(err.code||err.message))}}};
+
+// ---------------- 書き出し
+$("expOpen").onclick=()=>{const s=curSite();if(!s){toast("先に現場を選んでください");return}const l=sitePhotos();$("expSite").textContent=`${s.name}　写真 ${l.length}枚（位置あり ${l.filter(hasPos).length}枚）`;$("expStatus").textContent="";$("expDlg").hidden=false};
+$("expNo").onclick=()=>{$("expDlg").hidden=true};
+const loadScript=src=>new Promise((res,rej)=>{if(document.querySelector(`script[src="${src}"]`)){res();return}const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=()=>rej(new Error("ライブラリを読み込めません"));document.head.appendChild(s)});
+const stamp=()=>{const d=new Date();return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`};
+const safeName=t=>String(t||"現場").replace(/[\\/:*?"<>|]/g,"_").slice(0,60);
+function download(name,data){const b=data instanceof Blob?data:new Blob([data]);const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}
+async function fullURL(p){try{const d=await getDoc(doc(db,"imgs",p.id));if(d.exists())return d.data().data}catch(e){}return p.thumb||""}
+const rowOf=(p,i)=>({no:i+1,at:fmtDT(p.takenAt),cat:p.cat||"",title:p.title||"",memo:p.memo||"",lat:hasPos(p)?p.lat.toFixed(6):"",lng:hasPos(p)?p.lng.toFixed(6):"",acc:p.acc?Math.round(p.acc):"",dir:hasDir(p)?dirName(p.heading):"",deg:hasDir(p)?Math.round(p.heading):"",by:p.byName||"",
+  pos:hasPos(p)?`${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}${p.acc?`（±${Math.round(p.acc)}m）`:""}`:"記録なし",dirTxt:hasDir(p)?`${dirName(p.heading)}（${Math.round(p.heading)}°）`:"記録なし"});
+// 位置図（方眼・方位・縮尺付き）
+function plotPNG(list,W=1800,H=1240){const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d"),u=W/900;x.fillStyle="#fff";x.fillRect(0,0,W,H);
+  const pts=list.filter(hasPos);if(!pts.length)return c.toDataURL("image/png");
+  const O={lat:pts.reduce((a,p)=>a+p.lat,0)/pts.length,lng:pts.reduce((a,p)=>a+p.lng,0)/pts.length};
+  const toW=p=>({x:(p.lng-O.lng)*Math.cos(O.lat*RAD)*111320,y:(p.lat-O.lat)*110574});const ws=pts.map(toW);
+  let x0=Math.min(...ws.map(w=>w.x)),x1=Math.max(...ws.map(w=>w.x)),y0=Math.min(...ws.map(w=>w.y)),y1=Math.max(...ws.map(w=>w.y));
+  const pd=90*u,s=Math.min((W-2*pd)/Math.max(x1-x0,20),(H-2*pd)/Math.max(y1-y0,20)),cx=(x0+x1)/2,cy=(y0+y1)/2;
+  const SX=v=>W/2+(v-cx)*s,SY=v=>H/2-(v-cy)*s;
+  const nice=(t)=>{const m=t/s,p=Math.pow(10,Math.floor(Math.log10(m)));for(const k of[1,2,5,10])if(k*p>=m)return k*p;return 10*p};
+  const st=nice(70*u);x.strokeStyle="#e6e9e2";x.lineWidth=u;x.beginPath();for(let v=Math.floor((cx-W/2/s)/st)*st;v<=cx+W/2/s;v+=st){x.moveTo(SX(v),0);x.lineTo(SX(v),H)}for(let v=Math.floor((cy-H/2/s)/st)*st;v<=cy+H/2/s;v+=st){x.moveTo(0,SY(v));x.lineTo(W,SY(v))}x.stroke();
+  const F=`"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif`,R=52*u;
+  list.forEach((p,i)=>{if(!hasPos(p))return;const w=toW(p),X=SX(w.x),Y=SY(w.y);let lx=X,ly=Y;
+    if(hasDir(p)){const h=p.heading*RAD,half=Math.max(8,Math.min(60,(p.fov||60)/2))*RAD;x.beginPath();x.moveTo(X,Y);x.arc(X,Y,R,h-half-Math.PI/2,h+half-Math.PI/2);x.closePath();x.fillStyle="rgba(159,196,58,.30)";x.fill();x.strokeStyle="rgba(110,150,25,.95)";x.lineWidth=1.2*u;x.stroke();lx=X+Math.sin(h)*(R+10*u);ly=Y-Math.cos(h)*(R+10*u)}
+    x.beginPath();x.arc(X,Y,3.2*u,0,7);x.fillStyle="#2a2f36";x.fill();x.beginPath();x.arc(lx,ly,10.5*u,0,7);x.fill();x.fillStyle="#fff";x.font=`700 ${11*u}px ${F}`;x.textAlign="center";x.textBaseline="middle";x.fillText(String(i+1),lx,ly+.5*u)});
+  x.save();x.translate(W-30*u,36*u);x.fillStyle="#2a2f36";x.beginPath();x.moveTo(0,-16*u);x.lineTo(7*u,10*u);x.lineTo(0,5*u);x.closePath();x.fill();x.font=`700 ${11*u}px ${F}`;x.textAlign="center";x.textBaseline="bottom";x.fillText("N",0,-18*u);x.restore();
+  const bl=nice(90*u),bx=14*u,by=H-18*u;x.strokeStyle="#2a2f36";x.lineWidth=2*u;x.beginPath();x.moveTo(bx,by-6*u);x.lineTo(bx,by);x.lineTo(bx+bl*s,by);x.lineTo(bx+bl*s,by-6*u);x.stroke();x.fillStyle="#2a2f36";x.font=`500 ${11*u}px ${F}`;x.textAlign="left";x.textBaseline="bottom";x.fillText(bl>=1000?bl/1000+" km":bl+" m",bx+bl*s+6*u,by+u);
+  return c.toDataURL("image/png")}
+$("expGo").onclick=async()=>{const fmt=document.querySelector("input[name=exf]:checked").value,s=curSite(),list=sitePhotos(),st=$("expStatus");if(!list.length){st.textContent="写真がありません";return}
+  $("expGo").disabled=true;st.classList.remove("err");
+  try{if(fmt==="csv")buildCSV(s,list);else if(fmt==="kmz")await buildKMZ(s,list,st);else if(fmt==="html")await buildHTML(s,list,st);else await buildXLSX(s,list,st);st.textContent="書き出しました"}
+  catch(e){st.classList.add("err");st.textContent="書き出せません："+(e.message||e.code)}finally{$("expGo").disabled=false}};
+function buildCSV(s,list){const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;const head=["No.","撮影日時","区分","件名","所見","緯度","経度","位置精度(m)","方位","方位角(°)","撮影者"];
+  download(`現地調査_${safeName(s.name)}_${stamp()}.csv`,"﻿"+[head.map(q).join(","),...list.map((p,i)=>{const r=rowOf(p,i);return[r.no,r.at,r.cat,r.title,r.memo,r.lat,r.lng,r.acc,r.dir,r.deg,r.by].map(q).join(",")})].join("\r\n"))}
+async function buildKMZ(s,list,st){await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");const zip=new JSZip(),files=zip.folder("files");
+  const ac=document.createElement("canvas");ac.width=ac.height=64;const a=ac.getContext("2d");a.translate(32,32);a.fillStyle="#9fc43a";a.strokeStyle="#2a2f36";a.lineWidth=3;a.beginPath();a.moveTo(0,-28);a.lineTo(16,18);a.lineTo(0,8);a.lineTo(-16,18);a.closePath();a.fill();a.stroke();
+  files.file("arrow.png",ac.toDataURL("image/png").split(",")[1],{base64:true});const xe=t=>String(t??"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));let pm="";
+  for(let i=0;i<list.length;i++){const p=list[i];if(!hasPos(p))continue;st.textContent=`KMZを作成中… ${i+1}/${list.length}`;const r=rowOf(p,i),fn=`p${String(i+1).padStart(3,"0")}.jpg`;const d=await fullURL(p);if(d)files.file(fn,d.split(",")[1],{base64:true});
+    pm+=`<Placemark><name>No.${r.no} ${xe(r.title||r.cat)}</name><description><![CDATA[<img src="files/${fn}" width="480"><br><b>${xe(r.at)}</b>　${xe(r.dirTxt)}<br>${xe(r.memo).replace(/\n/g,"<br>")}]]></description><Style><IconStyle><scale>1.2</scale>${hasDir(p)?`<heading>${Math.round(p.heading)}</heading>`:""}<Icon><href>files/arrow.png</href></Icon></IconStyle></Style><Point><coordinates>${p.lng.toFixed(7)},${p.lat.toFixed(7)},0</coordinates></Point></Placemark>\n`}
+  zip.file("doc.kml",`<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>${xe(s.name)} 現地調査</name>\n${pm}</Document></kml>`);
+  download(`現地調査_${safeName(s.name)}_${stamp()}.kmz`,await zip.generateAsync({type:"blob"}))}
+async function buildHTML(s,list,st){const plot=plotPNG(list);let ph="";
+  for(let i=0;i<list.length;i++){st.textContent=`写真をまとめています… ${i+1}/${list.length}`;const p=list[i],r=rowOf(p,i),d=await fullURL(p);
+    ph+=`<section class="ph"><div class="img">${d?`<img src="${d}">`:""}</div><table><tr><th>写真No.</th><td>${r.no}</td><th>撮影日時</th><td>${esc(r.at)}</td></tr><tr><th>区分</th><td>${esc(r.cat)||"—"}</td><th>撮影方向</th><td>${esc(r.dirTxt)}</td></tr><tr><th>件名</th><td colspan="3">${esc(r.title)||"—"}</td></tr><tr><th>撮影位置</th><td colspan="3">${esc(r.pos)}</td></tr><tr><th>撮影者</th><td colspan="3">${esc(r.by)||"—"}</td></tr><tr><th>所見</th><td colspan="3">${esc(r.memo).replace(/\n/g,"<br>")||"—"}</td></tr></table></section>`}
+  const html=`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>現地調査報告書 ${esc(s.name)}</title><style>@page{size:A4;margin:14mm 13mm}*{box-sizing:border-box}body{font-family:"Yu Gothic","游ゴシック","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Meiryo",sans-serif;font-size:10pt;line-height:1.55;margin:0;color:#1a1d21}
+.page{page-break-after:always}h1{font-size:18pt;margin:0 0 4mm;border-bottom:2px solid #1a1d21;padding-bottom:2mm;letter-spacing:.08em}h2{font-size:12pt;margin:0 0 3mm}table{border-collapse:collapse;width:100%}th,td{border:.6pt solid #333;padding:1.6mm 2.4mm;text-align:left;vertical-align:top}th{background:#f1f2f0;white-space:nowrap;width:22mm}
+.plot{width:100%;border:.6pt solid #333;margin-top:3mm}.ph{page-break-inside:avoid;margin-bottom:7mm}.ph .img{border:.6pt solid #333;height:92mm;display:flex;align-items:center;justify-content:center}.ph img{max-width:100%;max-height:92mm}.ph:nth-of-type(2n){page-break-after:always}</style></head><body>
+<div class="page"><h1>現地調査報告書</h1><table><tr><th>現場名</th><td>${esc(s.name)}</td></tr><tr><th>所在地</th><td>${esc(s.address)||"—"}</td></tr><tr><th>顧客・依頼元</th><td>${esc(s.client)||"—"}</td></tr><tr><th>調査日</th><td>${esc(fmtYMD(s.date))||"—"}</td></tr><tr><th>調査目的</th><td>${esc(s.purpose)||"—"}</td></tr><tr><th>調査者</th><td>${esc(s.team)||"—"}</td></tr><tr><th>写真枚数</th><td>${list.length}枚</td></tr></table>
+<h2 style="margin-top:6mm">調査位置図</h2><img class="plot" src="${plot}"><div style="font-size:8.5pt;color:#555;margin-top:2mm">丸数字は写真No.（撮影順）、扇形は撮影した方向。位置はスマートフォンのGPSによる記録で数m程度の誤差を含む。</div></div>
+<div class="page" style="page-break-after:auto"><h2>写真台帳</h2>${ph}</div></body></html>`;
+  download(`現地調査報告書_${safeName(s.name)}_${stamp()}.html`,new Blob([html],{type:"text/html"}))}
+async function buildXLSX(s,list,st){await loadScript("https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js");
+  const wb=new ExcelJS.Workbook();wb.creator="NEXEED株式会社";const F={name:"游ゴシック",size:10},FB={...F,bold:true},thin={style:"thin",color:{argb:"FF333333"}},box={top:thin,left:thin,bottom:thin,right:thin},lab={type:"pattern",pattern:"solid",fgColor:{argb:"FFF1F2F0"}},wrap={wrapText:true,vertical:"middle"};
+  const w1=wb.addWorksheet("調査概要",{pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0}});w1.columns=[{width:7},{width:20},{width:18},{width:34},{width:18},{width:14}];
+  w1.mergeCells("A1:F1");w1.getCell("A1").value="現地調査 写真台帳";w1.getCell("A1").font={name:"游ゴシック",size:16,bold:true};w1.getRow(1).height=30;
+  const info=[["現場名",s.name],["所在地",s.address],["顧客・依頼元",s.client],["調査日",fmtYMD(s.date)],["調査目的",s.purpose],["調査者",s.team],["写真枚数",list.length+"枚"]];
+  info.forEach((r,i)=>{const n=3+i;w1.mergeCells(`A${n}:B${n}`);w1.mergeCells(`C${n}:F${n}`);const a=w1.getCell(`A${n}`),c=w1.getCell(`C${n}`);a.value=r[0];c.value=r[1]||"—";a.font=FB;c.font=F;a.fill=lab;a.alignment=wrap;c.alignment=wrap;["A","B","C","D","E","F"].forEach(k=>w1.getCell(`${k}${n}`).border=box);w1.getRow(n).height=22});
+  const pr=3+info.length+1;w1.getCell(`A${pr}`).value="調査位置図";w1.getCell(`A${pr}`).font={...FB,size:11};
+  w1.addImage(wb.addImage({base64:plotPNG(list),extension:"png"}),{tl:{col:0,row:pr},ext:{width:690,height:475}});for(let r=pr+1;r<=pr+25;r++)w1.getRow(r).height=15;
+  const hr=pr+27;["No.","撮影日時","区分","件名","撮影方向","撮影者"].forEach((h,i)=>{const c=w1.getRow(hr).getCell(i+1);c.value=h;c.font=FB;c.fill=lab;c.border=box;c.alignment={...wrap,horizontal:"center"}});
+  list.forEach((p,i)=>{const r=rowOf(p,i),row=w1.getRow(hr+1+i);[r.no,r.at,r.cat,r.title,r.dirTxt,r.by].forEach((v,j)=>{const c=row.getCell(j+1);c.value=v;c.font=F;c.border=box;c.alignment={...wrap,horizontal:j===0?"center":"left"}});row.height=20});
+  const w2=wb.addWorksheet("写真台帳",{pageSetup:{paperSize:9,orientation:"portrait",fitToPage:true,fitToWidth:1,fitToHeight:0}});w2.columns=[{width:58},{width:11},{width:34}];
+  w2.headerFooter={oddHeader:`&L${s.name.replace(/&/g,"&&")}&R写真台帳`,oddFooter:"&C&P / &N"};
+  const RH=32,ROWS=7,labels=["写真No.","撮影日時","区分","件名","撮影方向","撮影位置","所見"],boxW=58*7+5,boxH=ROWS*RH*96/72;let r0=1;
+  for(let i=0;i<list.length;i++){st.textContent=`写真台帳を作成中… ${i+1}/${list.length}`;const p=list[i],r=rowOf(p,i);w2.mergeCells(r0,1,r0+ROWS-1,1);
+    for(let k=0;k<ROWS;k++){const row=w2.getRow(r0+k);row.height=RH;const a=row.getCell(2),b=row.getCell(3);a.value=labels[k];a.font=FB;a.fill=lab;a.border=box;a.alignment={...wrap,horizontal:"center"};
+      b.value=[r.no,r.at,r.cat||"—",r.title||"—",r.dirTxt,r.pos,r.memo||"—"][k];b.font=k===0?{...FB,size:12}:F;b.border=box;b.alignment={wrapText:true,vertical:k===ROWS-1?"top":"middle"};row.getCell(1).border=box}
+    const d=await fullURL(p);if(d){const {im,u}=await loadImage(await (await fetch(d)).blob());const sc=Math.min((boxW-14)/im.naturalWidth,(boxH-14)/im.naturalHeight);URL.revokeObjectURL(u);
+      const iw=Math.round(im.naturalWidth*sc),ih=Math.round(im.naturalHeight*sc);w2.addImage(wb.addImage({base64:d,extension:"jpeg"}),{tl:{col:Math.min(.4,(boxW-iw)/2/boxW),row:r0-1+.12},ext:{width:iw,height:ih},editAs:"oneCell"})}
+    r0+=ROWS;if((i+1)%3===0&&i<list.length-1)w2.getRow(r0-1).addPageBreak();else{w2.getRow(r0).height=10;r0+=1}}
+  st.textContent="Excelを保存しています…";download(`写真台帳_${safeName(s.name)}_${stamp()}.xlsx`,new Blob([await wb.xlsx.writeBuffer()]))}
+
+// ---------------- 開始画面（位置情報・コンパス・カメラの許可）
+function gateStart(){
+  $("gate").hidden=false;
+  $("gateBody").innerHTML=`<div style="display:flex;flex-direction:column;gap:14px">
+  <p>${esc(me.displayName||me.email)} さん。撮影の前に、位置情報・方位（コンパス）・カメラの使用を許可してください。</p>
+  <div class="perm"><div class="r"><b>位置情報</b><span id="gP">未確認</span></div><div class="r"><b>方位（コンパス）</b><span id="gO">未確認</span></div><div class="r"><b>カメラ</b><span id="gC">未確認</span></div></div>
+  <button class="btn primary" id="gGo" style="min-height:54px;font-size:16px">位置情報をオンにして調査開始</button>
+  <p style="font-size:12px">許可を求める画面が出たら「許可」を押してください。前に「許可しない」を選んだ場合は、iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→「Safari Webサイト」を「使用中のみ」にし、Safariのアドレスバーの「ぁあ」→「Webサイトの設定」で位置情報とカメラを「許可」にしてください。</p></div>`;
+  $("gGo").onclick=async()=>{$("gGo").disabled=true;
+    const o=await startOrient();$("gO").textContent=o?"OK":"使えません";$("gO").className=o?"ok":"ng";
+    const g=await startGeo();$("gP").textContent=g?`OK（±${Math.round(sens.acc)}m）`:(sens.geoErr||"使えません");$("gP").className=g?"ok":"ng";
+    await startCamera();$("gC").textContent=stream?"OK":"使えません";$("gC").className=stream?"ok":"ng";
+    sens.watching=true;setTimeout(()=>{$("gate").hidden=true;if(!mini){mini=makeMap($("miniMap"));drawPhotoMarkers(mini)}mini.invalidateSize();updateMeMarkers();if(!isNum(sens.lat))fitMap(mini);onSensor()},g&&stream?600:1800)};
+}
+
+// ---------------- 起動
+onAuthStateChanged(auth,u=>{
+  if(!u){me=null;stopCamera();gateLogin();return}
+  if(!okDomain(u.email)){signOut(auth);gateLogin(`${u.email} ではログインできません。会社のアカウント（${allowedDomains.map(d=>"@"+d).join("、")}）でログインしてください。`);return}
+  me=u;$("whoami").textContent=u.email;
+  onSnapshot(collection(db,"sites"),sn=>{sites=sn.docs.map(d=>({...d.data(),id:d.id}));
+    if(curSiteId&&!sn.metadata.fromCache&&!sites.find(s=>s.id===curSiteId))setSite("");
+    if(!curSiteId&&sites.length){const lt=sites.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];setSite(lt.id)}renderAll()},e=>{gateLogin("データを読み込めません（"+e.code+"）。管理者に連絡してください。")});
+  subscribePhotos();renderAll();
+  if(!sens.watching)gateStart();else $("gate").hidden=true;
+});
+</script>
+</body></html>
