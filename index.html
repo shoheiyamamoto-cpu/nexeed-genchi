@@ -133,9 +133,43 @@ textarea{resize:vertical;min-height:72px}select{height:44px}
 .scard .n small{display:block;font-weight:400;color:var(--muted);font-size:12px}
 .scard b{font-family:var(--mono);font-size:20px}
 .scard b small{display:block;font-size:10px;color:var(--muted);font-family:var(--font);font-weight:400;text-align:right}
+/* DD */
+.ddsum{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.ddc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 11px;font-size:12px;color:var(--muted)}
+.ddc b{display:block;color:var(--fg);font-size:13px;margin-bottom:6px}
+.ddc .bar{height:5px;background:var(--chip);border-radius:3px;overflow:hidden;margin-bottom:4px}.ddc .bar i{display:block;height:100%;background:var(--lime)}
+.ddc em{font-style:normal;color:var(--bad);font-weight:700}
+.ddch{font-weight:700;font-size:15px;margin:18px 0 6px;padding-bottom:4px;border-bottom:2px solid var(--fg)}
+.ddch small{font-weight:400;color:var(--muted);font-size:11px;margin-left:6px}
+.ddsub{font-size:11px;color:var(--muted);margin:10px 0 4px;letter-spacing:.03em}
+.ddrow{display:grid;grid-template-columns:3em 1fr;gap:4px 10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:6px;cursor:pointer}
+.ddid{font-family:var(--mono);font-size:12px;color:var(--muted);padding-top:2px}
+.ddtx{min-width:0}.ddtx b{display:block;font-size:14px;line-height:1.4}
+.ddtx small{display:block;font-size:12px;color:var(--muted);line-height:1.5}.ddtx small.fd{color:var(--fg)}
+.ddst{grid-column:2;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.st,.rt,.rk,.pc,.lv,.lv2{font-size:11px;font-weight:700;padding:1px 7px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.st-todo{color:var(--muted)}.st-doing{color:var(--info)}.st-tbc{color:var(--warn)}.st-done{color:var(--ok)}
+.rt{color:var(--fg)}.pc{color:var(--muted);font-weight:500}.lv{color:var(--bad)}
+.rk-高{color:#fff;background:var(--bad);border-color:var(--bad)}.rk-中{color:var(--warn)}.rk-低{color:var(--ok)}
+.ddreq{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px;font-size:13px}
+.ddreq p{margin:6px 0 0;line-height:1.6}.ddreq .en{color:var(--muted)}
+.lv2{display:inline-block;margin-right:6px;color:var(--muted)}.lv-must{color:var(--bad)}.lv-key{color:var(--warn)}
+.ddrisk,.ddph{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:12px}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.tb{width:88px;cursor:pointer;font-size:11px;font-family:var(--mono);color:var(--muted);text-align:center}
+.tb img{width:88px;height:66px;object-fit:cover;border-radius:6px;display:block;background:var(--chip)}
+.pk{display:grid;grid-template-columns:auto 72px 1fr;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:13px;font-family:var(--mono)}
+.pk input{width:auto}.pk img{width:72px;height:54px;object-fit:cover;border-radius:6px}.pk small{font-family:var(--font);color:var(--muted)}
+.exsec{font-size:11px;color:var(--muted);letter-spacing:.05em;margin-top:6px}
+.ddtag{position:absolute;left:10px;top:42px;max-width:calc(100% - 20px);background:rgba(0,0,0,.55);color:#fff;border:1px dashed rgba(255,255,255,.5);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ddtag.on{background:var(--lime);color:#1c2410;border:1px solid var(--lime);font-weight:700}
+.ddchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.ddchips .chip{display:inline-flex;gap:6px;align-items:center}
 
 /* シート */
-.sheet{position:fixed;inset:0;z-index:1500;background:var(--bg);display:flex;flex-direction:column}
+.sheet{position:fixed;inset:0;z-index:1500;}
+#pSheet{z-index:1600}
+.sheet{background:var(--bg);display:flex;flex-direction:column}
 .sheet .bar{padding-top:env(safe-area-inset-top);height:calc(52px + env(safe-area-inset-top));background:var(--brand);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;flex:none}
 .sheet .bar b{flex:1;font-size:15px;text-align:center;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sheet .body{flex:1;overflow-y:auto;padding-top:14px;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
@@ -175,6 +209,7 @@ textarea{resize:vertical;min-height:72px}select{height:44px}
     <video id="video" playsinline muted autoplay></video>
     <div class="camoff" id="camOff"><div>カメラを起動しています…</div></div>
     <div class="hud"><span class="tag" id="tPos">位置 —</span><span class="tag" id="tDir">方位 —</span><span class="tag" id="tCnt">0枚</span></div>
+    <button class="ddtag" id="ddTagBtn">DD項目：なし</button>
     <div class="compass"><canvas id="cmp" width="720" height="68"></canvas></div>
     <div class="shutterrow">
       <button class="side" id="lastBtn" aria-label="最後に撮った写真"><span class="ph" id="lastPh"></span><span>直前の写真</span></button>
@@ -202,6 +237,14 @@ textarea{resize:vertical;min-height:72px}select{height:44px}
   <div id="plist"></div>
 </div></div>
 
+<!-- DD -->
+<div class="view gut pad" id="v-dd" hidden><div class="wrap">
+  <div class="ddsum" id="ddSum"></div>
+  <div class="tools"><input id="ddQ" placeholder="項目名・所見・照会先で検索" autocomplete="off"></div>
+  <div class="chips" id="ddF" style="margin-bottom:6px"><span class="chip" data-f="field">現地で確認</span><span class="chip" data-f="todo">未着手</span><span class="chip" data-f="open">調査中・TBC</span><span class="chip" data-f="risk">要注意（×・リスク高）</span><span class="chip" data-f="must">不可偏離</span></div>
+  <div id="ddList"></div>
+</div></div>
+
 <!-- 現場 -->
 <div class="view gut pad" id="v-sites" hidden><div class="wrap">
   <div class="tools"><button class="btn primary" id="sNew" style="flex:1">＋ 現場を追加</button></div>
@@ -226,6 +269,7 @@ textarea{resize:vertical;min-height:72px}select{height:44px}
   <button data-v="shoot" class="on"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>撮影</button>
   <button data-v="map"><svg viewBox="0 0 24 24"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2"/></svg>地図</button>
   <button data-v="photos"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 15l5-4 4 3 3-2 6 4"/></svg>写真</button>
+  <button data-v="dd"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v2h6V3M8.5 11l1.5 1.5 3-3M8.5 16.5l1.5 1.5 3-3"/></svg>DD</button>
   <button data-v="sites"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V9l7-5 7 5v12"/><path d="M10 21v-6h4v6"/></svg>現場</button>
 </div>
 
@@ -234,6 +278,14 @@ textarea{resize:vertical;min-height:72px}select{height:44px}
   <div class="body gut"><div class="wrap" id="pBody"></div></div>
 </div>
 
+<div class="sheet" id="ddSheet" hidden>
+  <div class="bar gut"><button class="hbtn" id="ddClose">閉じる</button><b id="ddTtl">DD項目</b><button class="hbtn" id="ddSave">保存</button></div>
+  <div class="body gut"><div class="wrap" id="ddBody"></div></div>
+</div>
+<div class="dlg" id="pickDlg" hidden><div class="box"><b id="pickTtl">写真を選ぶ</b><div id="pickList" style="display:flex;flex-direction:column;gap:6px"></div>
+  <div class="acts"><button class="btn primary grow" id="pickGo">決定</button><button class="btn" id="pickNo">閉じる</button></div></div></div>
+<div class="dlg" id="tagDlg" hidden><div class="box"><b>これから撮る写真のDD項目</b><div class="status" style="font-family:var(--font)">選んだ項目の証拠写真として記録されます。現地で確認できる項目だけを出しています。</div><div id="tagList" style="display:flex;flex-direction:column;gap:6px"></div>
+  <div class="acts"><button class="btn primary grow" id="tagGo">決定</button><button class="btn" id="tagNo">閉じる</button></div></div></div>
 <div class="dlg" id="altDlg" hidden><div class="box">
   <b>ほかの方法で追加</b>
   <button class="btn" id="altCam">iPhoneのカメラ画面で撮る</button>
@@ -249,6 +301,7 @@ textarea{resize:vertical;min-height:72px}select{height:44px}
   <label class="opt"><input type="radio" name="exf" value="xlsx" checked>写真台帳（Excel）<small>1ページ3枚の写真台帳と、調査位置図・写真一覧のシート</small></label>
   <label class="opt"><input type="radio" name="exf" value="html">調査報告書（HTML）<small>開いて印刷するとPDFになります</small></label>
   <label class="opt"><input type="radio" name="exf" value="kmz">Google Earth用（KMZ）</label>
+  <label class="opt"><input type="radio" name="exf" value="dd">DD所見リスト（Excel・BDC様式）<small>BDCの「Site Due Diligence Finding List」と同じ列で、所見・リスク・対策・証拠写真No.を出力</small></label>
   <label class="opt"><input type="radio" name="exf" value="csv">一覧表（CSV）</label>
   <div class="status" id="expStatus"></div>
   <div class="acts" style="margin-top:2px"><button class="btn primary grow" id="expGo">書き出す</button><button class="btn" id="expNo">閉じる</button></div>
@@ -258,9 +311,10 @@ textarea{resize:vertical;min-height:72px}select{height:44px}
 
 <script type="module">
 import { firebaseConfig, allowedDomains } from "./config.js?v=2";
+import { DD_CHAPTERS, DD_ITEMS, SEVERITY, LIKELIHOOD, riskLevel } from "./dd-items.js?v=1";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, updateDoc, deleteDoc, getDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, updateDoc, deleteDoc, getDoc, onSnapshot, query, where, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -388,7 +442,7 @@ function fitMap(m){if(!m)return;const pts=sitePhotos().filter(hasPos).map(p=>[p.
 function drawAllMarkers(){drawPhotoMarkers(mini);drawPhotoMarkers(big)}
 
 // ---------------- 画面切り替え
-const VIEWS=["shoot","map","photos","sites"];
+const VIEWS=["shoot","map","photos","dd","sites"];
 function show(v){view=VIEWS.includes(v)?v:"shoot";VIEWS.forEach(x=>$("v-"+x).hidden=x!==view);
   document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
   if(view==="shoot"){startCamera();setTimeout(()=>mini&&mini.invalidateSize(),50)}else stopCamera();
@@ -457,7 +511,7 @@ async function savePhoto({canvas,takenAt,ss,src,fov}){
   const d={siteId:s.id,by:me.uid,byName:me.displayName||me.email,takenAt,createdAt:Date.now(),src,
     lat:ss.posOk?ss.lat:null,lng:ss.posOk?ss.lng:null,acc:ss.posOk&&isNum(ss.acc)?Math.round(ss.acc*10)/10:null,alt:ss.posOk&&isNum(ss.alt)?Math.round(ss.alt*10)/10:null,
     heading:ss.dirOk?Math.round(ss.heading*10)/10:null,posSrc:ss.posOk?(src==="exif"?"exif":"gps"):"",headSrc:ss.dirOk?(src==="exif"?"exif":"compass"):"",
-    fov:Math.round(fov||60),w:full.w,h:full.h,cat:"",title:"",memo:"",thumb:th.u};
+    fov:Math.round(fov||60),w:full.w,h:full.h,cat:"",title:"",memo:"",measure:"",dd:ddTag?[ddTag]:[],thumb:th.u};
   photos.push({...d,id});pending.set(id,1);renderAll();
   $("lastPh").outerHTML=`<img id="lastPh" src="${th.u}" alt="">`;
   try{await setDoc(doc(db,"imgs",id),{data:full.u,siteId:s.id});await setDoc(ref,d);pending.delete(id)}
@@ -470,11 +524,12 @@ $("lastBtn").onclick=()=>{const l=sitePhotos().slice().sort((a,b)=>(b.createdAt|
 function pcardHTML(p,n){const flags=[!hasPos(p)?`<span class="pill warn">位置なし</span>`:"",!hasDir(p)?`<span class="pill warn">方向なし</span>`:"",pending.has(p.id)?`<span class="pill mut">送信待ち</span>`:""].join("");
   return `<div class="pcard" data-p="${p.id}"><img src="${p.thumb||""}" alt=""><div class="tx"><div class="t1"><span class="no">No.${n}</span><span class="tt">${esc(p.title)||esc(p.cat)||"（件名なし）"}</span></div>
   <div class="t2"><span>${fmtT(p.takenAt)}</span><span class="dir">${dirLabel(p.heading)}</span><span>${esc(p.byName||"")}</span>${flags}</div>
+  ${(p.dd||[]).length?`<div class="t2"><span>DD ${(p.dd||[]).map(esc).join("・")}</span>${p.measure?`<span>${esc(p.measure)}</span>`:""}</div>`:(p.measure?`<div class="t2"><span>${esc(p.measure)}</span></div>`:"")}
   ${p.memo?`<div class="t2" style="color:var(--fg)">${esc(p.memo.length>60?p.memo.slice(0,60)+"…":p.memo)}</div>`:""}</div></div>`}
 function renderAll(){
   const s=curSite(),list=sitePhotos();
   $("hsite").textContent=s?s.name+" ▾":"現場を選ぶ ▾";
-  $("tCnt").textContent=`${list.length}枚`;
+  $("tCnt").textContent=`${list.length}枚`;renderDD();
   const pend=pending.size;$("upq").hidden=!pend;$("upq").textContent=`送信待ち ${pend}枚（電波が戻ると自動で送信）`;
   drawAllMarkers();
   const q=$("q").value.trim().toLowerCase();
@@ -508,7 +563,7 @@ $("sSave").onclick=async()=>{const d={name:$("sName").value.trim(),client:$("sCl
     $("sForm").hidden=true;toast("保存しました")}catch(e){toast("保存できません："+(e.code||e.message))}};
 $("slist").onclick=e=>{const ed=e.target.closest("[data-sedit]");if(ed){e.stopPropagation();openSiteForm(sites.find(s=>s.id===ed.dataset.sedit));return}
   const c=e.target.closest("[data-s]");if(c){setSite(c.dataset.s);show("shoot")}};
-function setSite(id){curSiteId=id;ls.set("gc.site",id);selId=null;subscribePhotos();renderAll()}
+function setSite(id){curSiteId=id;ls.set("gc.site",id);selId=null;subscribePhotos();subscribeDD();renderAll()}
 function subscribePhotos(){if(unsubP){unsubP();unsubP=null}photos=[];if(!curSiteId){renderAll();return}let first=true;
   unsubP=onSnapshot(query(collection(db,"photos"),where("siteId","==",curSiteId)),{includeMetadataChanges:true},sn=>{
     photos=sn.docs.map(d=>({...d.data(),id:d.id}));pending.clear();sn.docs.forEach(d=>{if(d.metadata.hasPendingWrites)pending.set(d.id,1)});renderAll();
@@ -531,6 +586,9 @@ async function openSheet(id){const p=photos.find(x=>x.id===id);if(!p)return;open
   <label>区分<select id="fCat"><option value="">（未分類）</option>${CATS.map(c=>`<option ${p.cat===c?"selected":""}>${c}</option>`).join("")}</select></label>
   <label>方向（真北から時計回り°）<input id="fHead" type="number" min="0" max="359" value="${hasDir(p)?Math.round(p.heading):""}" placeholder="未設定"></label>
   <label class="wide">所見<textarea id="fMemo" rows="4">${esc(p.memo)}</textarea></label>
+  <label class="wide">測定値・メモ<input id="fMeasure" value="${esc(p.measure||"")}" placeholder="例：前面道路幅員 6.2m／騒音 52dB／電柱 関電No.123" autocomplete="off"></label>
+  <div class="wide"><div style="font-size:11px;color:var(--muted);letter-spacing:.05em">DD項目（この写真が証拠になる項目）</div><div class="ddchips" id="fDD">${(p.dd||[]).map(id=>`<span class="chip">${esc(id)} ${esc(ddById(id)?.ja||"")}<b data-ddrm="${esc(id)}" style="cursor:pointer">×</b></span>`).join("")}</div>
+    <select id="fDDadd" style="margin-top:6px"><option value="">＋ DD項目を追加</option>${DD_ITEMS.map(x=>`<option value="${x.id}">${x.id}　${esc(x.ja)}</option>`).join("")}</select></div>
   <label class="wide">緯度, 経度<input id="fLL" value="${hasPos(p)?p.lat.toFixed(6)+", "+p.lng.toFixed(6):""}" placeholder="35.658100, 139.701700" autocomplete="off"></label></div>
   <div class="links">${hasPos(p)?`<a href="https://www.google.com/maps/search/?api=1&query=${p.lat.toFixed(6)},${p.lng.toFixed(6)}" target="_blank" rel="noopener">Googleマップで開く</a><a href="https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${p.lat.toFixed(6)},${p.lng.toFixed(6)}${hasDir(p)?"&heading="+Math.round(p.heading):""}" target="_blank" rel="noopener">ストリートビューで同じ方向を見る</a>`:""}</div>
   <div class="acts"><button class="btn primary grow" id="pSave2">保存</button></div>
@@ -539,17 +597,114 @@ async function openSheet(id){const p=photos.find(x=>x.id===id);if(!p)return;open
   try{const d=await getDoc(doc(db,"imgs",id));if(openPid===id&&d.exists())$("pImg").src=d.data().data}catch(e){}
 }
 async function savePhotoForm(){const p=photos.find(x=>x.id===openPid);if(!p)return;
-  const u={title:$("fTitle").value.trim(),cat:$("fCat").value,memo:$("fMemo").value.trim()};
+  const u={title:$("fTitle").value.trim(),cat:$("fCat").value,memo:$("fMemo").value.trim(),measure:$("fMeasure").value.trim()};
   const hv=$("fHead").value;if(hv===""){if(hasDir(p)){u.heading=null;u.headSrc=""}}else{const h=norm360(+hv);if(!hasDir(p)||Math.round(p.heading)!==Math.round(h)){u.heading=h;u.headSrc="manual"}}
   const t=$("fLL").value.trim();if(!t){if(hasPos(p)){u.lat=null;u.lng=null;u.posSrc=""}}else{const m=t.match(/(-?\d+(?:\.\d+)?)\s*[,，、\s]\s*(-?\d+(?:\.\d+)?)/);if(!m){toast("緯度・経度は「35.6581, 139.7017」の形で入力してください");return}
     const lat=+m[1],lng=+m[2];if(!hasPos(p)||Math.abs(lat-p.lat)>1e-6||Math.abs(lng-p.lng)>1e-6){u.lat=lat;u.lng=lng;u.posSrc="manual";u.acc=null}}
   try{await updateDoc(doc(db,"photos",p.id),u);toast("保存しました")}catch(e){toast("保存できません："+(e.code||e.message))}}
 $("pSave").onclick=savePhotoForm;
+$("pBody").addEventListener("change",async e=>{if(e.target.id!=="fDDadd"||!e.target.value)return;const id=e.target.value;try{await updateDoc(doc(db,"photos",openPid),{dd:arrayUnion(id)});toast(`DD ${id} に追加しました`);openSheet(openPid)}catch(err){toast("保存できません")}});
 $("pBody").onclick=async e=>{const t=e.target;
+  if(t.dataset.ddrm){try{await updateDoc(doc(db,"photos",openPid),{dd:arrayRemove(t.dataset.ddrm)});openSheet(openPid)}catch(err){toast("保存できません")}return}
   if(t.id==="pSave2")savePhotoForm();
   else if(t.id==="pDel")$("pDelWrap").innerHTML=`<span class="confirm">この写真を削除します。元に戻せません。<button class="btn small danger" id="pDelYes">削除する</button><button class="btn small" id="pDelNo">やめる</button></span>`;
   else if(t.id==="pDelNo")$("pDelWrap").innerHTML=`<button class="btn danger small" id="pDel">この写真を削除</button>`;
   else if(t.id==="pDelYes"){const id=openPid;t.disabled=true;try{await deleteDoc(doc(db,"photos",id));await deleteDoc(doc(db,"imgs",id));closeSheet();toast("削除しました")}catch(err){toast("削除できません："+(err.code||err.message))}}};
+
+// ---------------- DDチェックリスト
+let ddMap={},unsubD=null,ddTag=ls.get("gc.ddTag"),fDD="",ddOpen=null,ddPick=null;
+const ddById=id=>DD_ITEMS.find(x=>x.id===id);
+const ST={todo:"未着手",doing:"調査中",tbc:"TBC",done:"確認済"};
+const LVL={must:"不可偏離",key:"重点",gen:"一般"};
+const ddPhotos=id=>sitePhotos().filter(p=>(p.dd||[]).includes(id));
+function ddRisk(r){return r?riskLevel(r.likelihood,r.severity):""}
+function subscribeDD(){if(unsubD){unsubD();unsubD=null}ddMap={};if(!curSiteId){renderDD();return}
+  unsubD=onSnapshot(query(collection(db,"dd"),where("siteId","==",curSiteId)),sn=>{ddMap={};sn.docs.forEach(d=>{const x=d.data();ddMap[x.itemId]=x});renderDD();if(!$("ddSheet").hidden&&ddOpen)fillDDPhotos()},e=>toast("DDを読み込めません："+e.code))}
+function ddRowHTML(it){const r=ddMap[it.id]||{},st=r.status||"todo",n=ddPhotos(it.id).length,rk=ddRisk(r);
+  return `<div class="ddrow" data-dd="${it.id}"><span class="ddid">${it.id}</span><div class="ddtx"><b>${esc(it.ja)}</b>${it.th?`<small>${esc(it.th)}</small>`:""}${r.finding?`<small class="fd">${esc(r.finding.length>70?r.finding.slice(0,70)+"…":r.finding)}</small>`:""}</div>
+  <div class="ddst"><span class="st st-${st}">${ST[st]}</span>${r.rating?`<span class="rt">${esc(r.rating)}</span>`:""}${rk?`<span class="rk rk-${rk}">リスク${rk}</span>`:""}${n?`<span class="pc">写真${n}</span>`:""}${it.lv==="must"?`<span class="lv">不可偏離</span>`:""}</div></div>`}
+function renderDD(){
+  const box=$("ddList");if(!box)return;const s=curSite();
+  if(!s){box.innerHTML=`<div class="empty"><b>現場を選んでください</b></div>`;$("ddSum").innerHTML="";return}
+  const q=$("ddQ").value.trim().toLowerCase();
+  const sum=DD_CHAPTERS.map(c=>{const its=DD_ITEMS.filter(x=>x.ch===c.ch);const done=its.filter(x=>ddMap[x.id]?.status==="done").length;const ng=its.filter(x=>ddMap[x.id]?.rating==="×"||ddRisk(ddMap[x.id])==="高").length;
+    return `<div class="ddc"><b>${c.ch}. ${c.ja}</b><div class="bar"><i style="width:${its.length?Math.round(done/its.length*100):0}%"></i></div><span>${done}/${its.length} 確認済${ng?`　<em>要注意 ${ng}</em>`:""}</span></div>`}).join("");
+  $("ddSum").innerHTML=sum;
+  document.querySelectorAll("#ddF .chip").forEach(c=>c.classList.toggle("on",c.dataset.f===fDD));
+  const ok=it=>{const r=ddMap[it.id]||{};const st=r.status||"todo";
+    if(fDD==="field"&&!it.field)return false;if(fDD==="todo"&&st!=="todo")return false;if(fDD==="open"&&!(st==="doing"||st==="tbc"))return false;
+    if(fDD==="risk"&&!(r.rating==="×"||ddRisk(r)==="高"))return false;if(fDD==="must"&&it.lv!=="must")return false;
+    if(q&&![it.id,it.ja,it.en,it.th,r.finding,r.source,r.contact].join(" ").toLowerCase().includes(q))return false;return true};
+  let html="";DD_CHAPTERS.forEach(c=>{const its=DD_ITEMS.filter(x=>x.ch===c.ch&&ok(x));if(!its.length)return;html+=`<div class="ddch">${c.ch}. ${c.ja} <small>${c.en}</small></div>`;
+    let sub="";its.forEach(it=>{if(it.sub!==sub){sub=it.sub;html+=`<div class="ddsub">${esc(it.cat)} ／ ${esc(it.sub)}</div>`}html+=ddRowHTML(it)})});
+  box.innerHTML=html||`<div class="empty">該当する項目がありません</div>`;
+}
+$("ddQ").addEventListener("input",renderDD);
+$("ddF").onclick=e=>{const c=e.target.closest(".chip");if(!c)return;fDD=fDD===c.dataset.f?"":c.dataset.f;renderDD()};
+$("ddList").onclick=e=>{const r=e.target.closest("[data-dd]");if(r)openDD(r.dataset.dd)};
+function openDD(id){const it=ddById(id);if(!it)return;ddOpen=id;const r=ddMap[id]||{};
+  $("ddTtl").textContent=`${it.id}　${it.ja}`;
+  const opt=(arr,v)=>arr.map(([k,l])=>`<option value="${k}" ${String(v??"")===String(k)?"selected":""}>${l}</option>`).join("");
+  $("ddBody").innerHTML=`<div class="ddreq"><span class="lv2 lv-${it.lv}">${LVL[it.lv]}</span>${it.field?`<span class="lv2">現地で確認可</span>`:""}
+    <p class="en">${esc(it.cat)} ／ ${esc(it.sub)}：${esc(it.en)}</p>${it.th?`<p>確認の目安：${esc(it.th)}</p>`:""}</div>
+  <div class="form">
+    <label>状態<select id="dStatus">${opt(Object.entries(ST),r.status||"todo")}</select></label>
+    <label>判定<select id="dRating">${opt([["","（未判定）"],["○","○ 問題なし"],["△","△ 条件付き・要対策"],["×","× 不可・不適合"],["該当","該当（規制等の適用あり）"],["非該当","非該当（規制等の適用なし）"]],r.rating)}</select></label>
+    <label>情報源<select id="dSource">${opt([["","（未選択）"],["現地確認","現地確認"],["受領資料","受領資料"],["行政照会","行政照会"],["事業者照会","事業者照会（電力・水道・通信 等）"],["公開情報","公開情報"]],r.source)}</select></label>
+    <label>確認日<input id="dDate" type="date" value="${esc(r.date||"")}"></label>
+    <label class="wide">照会先・資料名<input id="dContact" value="${esc(r.contact||"")}" placeholder="例：川西市 都市計画課／重要事項説明書 p.12" autocomplete="off"></label>
+    <label class="wide">所見<textarea id="dFinding" rows="4" placeholder="例：敷地北側に66kV送電線（鉄塔No.12）。敷地境界から約180m。">${esc(r.finding||"")}</textarea></label>
+  </div>
+  <div class="ddrisk"><b>リスク評価（BDCのマトリクス）</b>
+    <div class="form" style="margin-top:8px">
+      <label>発生可能性<select id="dLike">${opt([["","—"],...LIKELIHOOD.map(([k,l])=>[k,`${k} ${l}`])],r.likelihood)}</select></label>
+      <label>影響度<select id="dSev">${opt([["","—"],...SEVERITY.map(([k,l])=>[k,`${k} ${l}`])],r.severity)}</select></label>
+      <div class="wide" id="dRiskOut"></div>
+      <label class="wide">対策<textarea id="dMit" rows="3" placeholder="例：送電線側に建物を寄せない配置とし、電磁干渉は設計で低減する。">${esc(r.mitigation||"")}</textarea></label>
+      <label>対策後のリスク<select id="dRes">${opt([["","—"],["高","高"],["中","中"],["低","低"]],r.residual)}</select></label>
+    </div></div>
+  <div class="ddph"><b>証拠写真</b><div class="thumbs" id="ddThumbs"></div>
+    <div class="acts"><button class="btn primary" id="ddShoot">この項目の写真を撮る</button><button class="btn" id="ddPickBtn">撮影済みの写真から選ぶ</button>${id==="1.3"||id==="1.4"?`<button class="btn" id="ddAuto">撮影データから入力</button>`:""}</div></div>
+  <div class="acts"><button class="btn primary grow" id="ddSave2">保存</button></div>
+  <div class="status" id="ddMeta">${r.updatedAt?`最終更新 ${fmtDT(r.updatedAt)}　${esc(r.updatedByName||"")}`:""}</div>`;
+  const upd=()=>{const lv=riskLevel($("dLike").value,$("dSev").value);$("dRiskOut").innerHTML=lv?`<span class="rk rk-${lv}">リスク ${lv}</span>`:""};
+  $("dLike").onchange=upd;$("dSev").onchange=upd;upd();
+  fillDDPhotos();$("ddSheet").hidden=false;$("ddSheet").querySelector(".body").scrollTop=0;
+}
+function fillDDPhotos(){const el=$("ddThumbs");if(!el)return;const ps=ddPhotos(ddOpen);
+  el.innerHTML=ps.length?ps.map(p=>`<div class="tb" data-p="${p.id}"><img src="${p.thumb||""}" alt=""><span>No.${numberOf(p)}</span></div>`).join(""):`<div class="count">まだ写真がありません</div>`}
+async function saveDD(){const it=ddById(ddOpen);if(!it)return;
+  const d={siteId:curSiteId,itemId:it.id,status:$("dStatus").value,rating:$("dRating").value,source:$("dSource").value,date:$("dDate").value,contact:$("dContact").value.trim(),
+    finding:$("dFinding").value.trim(),likelihood:$("dLike").value?+$("dLike").value:null,severity:$("dSev").value,mitigation:$("dMit").value.trim(),residual:$("dRes").value,
+    updatedAt:Date.now(),updatedBy:me.uid,updatedByName:me.displayName||me.email};
+  try{await setDoc(doc(db,"dd",curSiteId+"__"+it.id),d);toast("保存しました")}catch(e){toast("保存できません："+(e.code||e.message))}}
+$("ddSave").onclick=saveDD;
+$("ddClose").onclick=()=>{$("ddSheet").hidden=true;ddOpen=null};
+$("ddBody").addEventListener("click",e=>{const t=e.target;
+  if(t.id==="ddSave2")saveDD();
+  else if(t.id==="ddShoot"){setDDTag(ddOpen);$("ddSheet").hidden=true;show("shoot");toast("これから撮る写真は「"+ddOpen+"」に入ります")}
+  else if(t.id==="ddPickBtn")openPick();
+  else if(t.id==="ddAuto"){const ps=sitePhotos().filter(hasPos);if(!ps.length){toast("位置情報付きの写真がありません");return}
+    if(ddOpen==="1.3"){const lat=ps.reduce((a,p)=>a+p.lat,0)/ps.length,lng=ps.reduce((a,p)=>a+p.lng,0)/ps.length;$("dFinding").value=`撮影位置の中心：${lat.toFixed(6)}, ${lng.toFixed(6)}（写真${ps.length}枚の平均）`}
+    else{const al=ps.map(p=>p.alt).filter(isNum);$("dFinding").value=al.length?`GPS標高：約${Math.round(al.reduce((a,b)=>a+b,0)/al.length)}m（スマートフォンのGPS値・参考。TP値は測量・図面で確認）`:"GPS標高の記録がありません"}}});
+// 撮影済みの写真から選ぶ
+function openPick(){ddPick=new Set(ddPhotos(ddOpen).map(p=>p.id));const ps=sitePhotos();
+  $("pickTtl").textContent=`「${ddOpen} ${ddById(ddOpen).ja}」の写真を選ぶ`;
+  $("pickList").innerHTML=ps.length?ps.map(p=>`<label class="pk"><input type="checkbox" value="${p.id}" ${ddPick.has(p.id)?"checked":""}><img src="${p.thumb||""}" alt=""><span>No.${numberOf(p)}<br><small>${fmtT(p.takenAt)} ${esc(p.title||p.cat||"")}</small></span></label>`).join(""):`<div class="count">写真がありません</div>`;
+  $("pickDlg").hidden=false}
+$("pickNo").onclick=()=>{$("pickDlg").hidden=true};
+$("pickGo").onclick=async()=>{const now=new Set([...document.querySelectorAll("#pickList input:checked")].map(i=>i.value));const id=ddOpen;
+  try{for(const p of sitePhotos()){const had=ddPick.has(p.id),has=now.has(p.id);if(had===has)continue;await updateDoc(doc(db,"photos",p.id),{dd:has?arrayUnion(id):arrayRemove(id)})}
+    $("pickDlg").hidden=true;toast("写真を更新しました")}catch(e){toast("保存できません："+(e.code||e.message))}};
+// 撮影時のDD項目
+function setDDTag(id){ddTag=id||"";ls.set("gc.ddTag",ddTag);renderDDTag()}
+function renderDDTag(){const b=$("ddTagBtn");const it=ddById(ddTag);b.textContent=it?`DD ${it.id} ${it.ja}`:"DD項目：なし";b.classList.toggle("on",!!it)}
+$("ddTagBtn").onclick=()=>{const cur=ddTag;const its=DD_ITEMS.filter(x=>x.field);
+  $("tagList").innerHTML=`<label class="opt"><input type="radio" name="tg" value="" ${!cur?"checked":""}>指定しない</label>`+DD_CHAPTERS.map(c=>{const a=its.filter(x=>x.ch===c.ch);return a.length?`<div class="exsec">${c.ch}. ${c.ja}</div>`+a.map(x=>`<label class="opt"><input type="radio" name="tg" value="${x.id}" ${cur===x.id?"checked":""}>${x.id}　${esc(x.ja)}</label>`).join(""):""}).join("");
+  $("tagDlg").hidden=false};
+$("tagNo").onclick=()=>{$("tagDlg").hidden=true};
+$("tagGo").onclick=()=>{const v=(document.querySelector("#tagList input:checked")||{}).value||"";setDDTag(v);$("tagDlg").hidden=true};
+renderDDTag();
 
 // ---------------- 書き出し
 $("expOpen").onclick=()=>{const s=curSite();if(!s){toast("先に現場を選んでください");return}const l=sitePhotos();$("expSite").textContent=`${s.name}　写真 ${l.length}枚（位置あり ${l.filter(hasPos).length}枚）`;$("expStatus").textContent="";$("expDlg").hidden=false};
@@ -559,7 +714,7 @@ const stamp=()=>{const d=new Date();return `${d.getFullYear()}${pad(d.getMonth()
 const safeName=t=>String(t||"現場").replace(/[\\/:*?"<>|]/g,"_").slice(0,60);
 function download(name,data){const b=data instanceof Blob?data:new Blob([data]);const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),30000)}
 async function fullURL(p){try{const d=await getDoc(doc(db,"imgs",p.id));if(d.exists())return d.data().data}catch(e){}return p.thumb||""}
-const rowOf=(p,i)=>({no:i+1,at:fmtDT(p.takenAt),cat:p.cat||"",title:p.title||"",memo:p.memo||"",lat:hasPos(p)?p.lat.toFixed(6):"",lng:hasPos(p)?p.lng.toFixed(6):"",acc:p.acc?Math.round(p.acc):"",dir:hasDir(p)?dirName(p.heading):"",deg:hasDir(p)?Math.round(p.heading):"",by:p.byName||"",
+const rowOf=(p,i)=>({ddTxt:(p.dd||[]).join("・"),measure:p.measure||"",no:i+1,at:fmtDT(p.takenAt),cat:p.cat||"",title:p.title||"",memo:p.memo||"",lat:hasPos(p)?p.lat.toFixed(6):"",lng:hasPos(p)?p.lng.toFixed(6):"",acc:p.acc?Math.round(p.acc):"",dir:hasDir(p)?dirName(p.heading):"",deg:hasDir(p)?Math.round(p.heading):"",by:p.byName||"",
   pos:hasPos(p)?`${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}${p.acc?`（±${Math.round(p.acc)}m）`:""}`:"記録なし",dirTxt:hasDir(p)?`${dirName(p.heading)}（${Math.round(p.heading)}°）`:"記録なし"});
 // 位置図（方眼・方位・縮尺付き）
 function plotPNG(list,W=1800,H=1240){const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d"),u=W/900;x.fillStyle="#fff";x.fillRect(0,0,W,H);
@@ -578,10 +733,31 @@ function plotPNG(list,W=1800,H=1240){const c=document.createElement("canvas");c.
   x.save();x.translate(W-30*u,36*u);x.fillStyle="#2a2f36";x.beginPath();x.moveTo(0,-16*u);x.lineTo(7*u,10*u);x.lineTo(0,5*u);x.closePath();x.fill();x.font=`700 ${11*u}px ${F}`;x.textAlign="center";x.textBaseline="bottom";x.fillText("N",0,-18*u);x.restore();
   const bl=nice(90*u),bx=14*u,by=H-18*u;x.strokeStyle="#2a2f36";x.lineWidth=2*u;x.beginPath();x.moveTo(bx,by-6*u);x.lineTo(bx,by);x.lineTo(bx+bl*s,by);x.lineTo(bx+bl*s,by-6*u);x.stroke();x.fillStyle="#2a2f36";x.font=`500 ${11*u}px ${F}`;x.textAlign="left";x.textBaseline="bottom";x.fillText(bl>=1000?bl/1000+" km":bl+" m",bx+bl*s+6*u,by+u);
   return c.toDataURL("image/png")}
-$("expGo").onclick=async()=>{const fmt=document.querySelector("input[name=exf]:checked").value,s=curSite(),list=sitePhotos(),st=$("expStatus");if(!list.length){st.textContent="写真がありません";return}
+$("expGo").onclick=async()=>{const fmt=document.querySelector("input[name=exf]:checked").value,s=curSite(),list=sitePhotos(),st=$("expStatus");if(!list.length&&fmt!=="dd"){st.textContent="写真がありません";return}
   $("expGo").disabled=true;st.classList.remove("err");
-  try{if(fmt==="csv")buildCSV(s,list);else if(fmt==="kmz")await buildKMZ(s,list,st);else if(fmt==="html")await buildHTML(s,list,st);else await buildXLSX(s,list,st);st.textContent="書き出しました"}
+  try{if(fmt==="dd")await buildDDXLSX(s,list,st);else if(fmt==="csv")buildCSV(s,list);else if(fmt==="kmz")await buildKMZ(s,list,st);else if(fmt==="html")await buildHTML(s,list,st);else await buildXLSX(s,list,st);st.textContent="書き出しました"}
   catch(e){st.classList.add("err");st.textContent="書き出せません："+(e.message||e.code)}finally{$("expGo").disabled=false}};
+async function buildDDXLSX(s,list,st){await loadScript("https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js");
+  const wb=new ExcelJS.Workbook();wb.creator="NEXEED株式会社";const F={name:"游ゴシック",size:9},FB={...F,bold:true},thin={style:"thin",color:{argb:"FF333333"}},box={top:thin,left:thin,bottom:thin,right:thin},lab={type:"pattern",pattern:"solid",fgColor:{argb:"FFF1F2F0"}};
+  const ws=wb.addWorksheet("DD Finding List",{pageSetup:{paperSize:9,orientation:"landscape",fitToPage:true,fitToWidth:1,fitToHeight:0},views:[{state:"frozen",ySplit:3}]});
+  const cols=[["No.",6],["Category\n分類",13],["Sub-category\n小分類",14],["Requirement\n要件",34],["Consultant Finding\n所見",46],["判定",7],["状態",8],["情報源・照会先",18],["Risk Category\n(High/Medium/Low)",11],["Mitigation Plan\n対策",34],["Risk Category When Mitigation Plan Is Implemented",13],["写真No.",10],["BDC Comments",18]];
+  ws.columns=cols.map(c=>({width:c[1]}));
+  ws.mergeCells(1,1,1,cols.length);const t=ws.getCell(1,1);t.value=`Data Center Site Due Diligence Finding List ／ ${s.name}`;t.font={name:"游ゴシック",size:13,bold:true};ws.getRow(1).height=24;
+  ws.mergeCells(2,1,2,cols.length);ws.getCell(2,1).value=`所在地：${s.address||"—"}　調査日：${fmtYMD(s.date)||"—"}　出力日：${fmtYMD(toLocal().slice(0,10))}　作成：NEXEED株式会社`;ws.getCell(2,1).font=F;
+  const hr=ws.getRow(3);cols.forEach((c,i)=>{const x=hr.getCell(i+1);x.value=c[0];x.font=FB;x.fill=lab;x.border=box;x.alignment={wrapText:true,vertical:"middle",horizontal:"center"}});hr.height=42;
+  const EN={"高":"High","中":"Medium","低":"Low"};let r=4;
+  const nums=new Map(list.map((p,i)=>[p.id,i+1]));
+  DD_ITEMS.forEach(it=>{const d=ddMap[it.id]||{};const rk=riskLevel(d.likelihood,d.severity);const ph=list.filter(p=>(p.dd||[]).includes(it.id)).map(p=>nums.get(p.id));
+    const vals=[it.id,it.cat,it.sub,`${it.en}\n${it.ja}${it.th?`（${it.th}）`:""}`,d.finding||"",d.rating||"",ST[d.status||"todo"],[d.source,d.contact,d.date?fmtYMD(d.date):""].filter(Boolean).join("\n"),rk?`${EN[rk]}\n${rk}`:"",d.mitigation||"",d.residual?`${EN[d.residual]}\n${d.residual}`:"",ph.join(", "),""];
+    const row=ws.getRow(r);vals.forEach((v,i)=>{const x=row.getCell(i+1);x.value=v;x.font=F;x.border=box;x.alignment={wrapText:true,vertical:"top",horizontal:[0,5,6,8,10,11].includes(i)?"center":"left"};
+      if(i===8&&rk==="高")x.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFF8D7D4"}};if(i===5&&d.rating==="×")x.font={...F,bold:true,color:{argb:"FFC43C3C"}}});r++});
+  const m=wb.addWorksheet("Risk Matrix");m.columns=[{width:16},{width:12},{width:12},{width:12},{width:12},{width:12}];
+  m.getCell("A1").value="The Matrix of Risk Category（影響度 × 発生可能性）";m.getCell("A1").font={name:"游ゴシック",size:11,bold:true};
+  const hd=["Severity ＼ Likelihood","Almost Certain (5)","Frequent (4)","Occasional (3)","Remote (2)","Rare (1)"];hd.forEach((h,i)=>{const x=m.getRow(3).getCell(i+1);x.value=h;x.font=FB;x.fill=lab;x.border=box;x.alignment={wrapText:true,horizontal:"center",vertical:"middle"}});m.getRow(3).height=30;
+  const SN={A:"Catastrophic (A)",B:"Major (B)",C:"Moderate (C)",D:"Minor (D)",E:"Negligible (E)"},COL={"高":"FFF8D7D4","中":"FFFCEBD0","低":"FFE3F1DC"};
+  ["A","B","C","D","E"].forEach((sv,j)=>{const row=m.getRow(4+j);const a=row.getCell(1);a.value=SN[sv];a.font=FB;a.border=box;
+    [5,4,3,2,1].forEach((l,k)=>{const lv=riskLevel(l,sv);const x=row.getCell(k+2);x.value=`${EN[lv]}（${lv}）`;x.font=F;x.border=box;x.alignment={horizontal:"center"};x.fill={type:"pattern",pattern:"solid",fgColor:{argb:COL[lv]}}})});
+  st.textContent="Excelを保存しています…";download(`DD_Finding_List_${safeName(s.name)}_${stamp()}.xlsx`,new Blob([await wb.xlsx.writeBuffer()]))}
 function buildCSV(s,list){const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;const head=["No.","撮影日時","区分","件名","所見","緯度","経度","位置精度(m)","方位","方位角(°)","撮影者"];
   download(`現地調査_${safeName(s.name)}_${stamp()}.csv`,"﻿"+[head.map(q).join(","),...list.map((p,i)=>{const r=rowOf(p,i);return[r.no,r.at,r.cat,r.title,r.memo,r.lat,r.lng,r.acc,r.dir,r.deg,r.by].map(q).join(",")})].join("\r\n"))}
 async function buildKMZ(s,list,st){await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");const zip=new JSZip(),files=zip.folder("files");
@@ -616,7 +792,7 @@ async function buildXLSX(s,list,st){await loadScript("https://cdnjs.cloudflare.c
   const RH=32,ROWS=7,labels=["写真No.","撮影日時","区分","件名","撮影方向","撮影位置","所見"],boxW=58*7+5,boxH=ROWS*RH*96/72;let r0=1;
   for(let i=0;i<list.length;i++){st.textContent=`写真台帳を作成中… ${i+1}/${list.length}`;const p=list[i],r=rowOf(p,i);w2.mergeCells(r0,1,r0+ROWS-1,1);
     for(let k=0;k<ROWS;k++){const row=w2.getRow(r0+k);row.height=RH;const a=row.getCell(2),b=row.getCell(3);a.value=labels[k];a.font=FB;a.fill=lab;a.border=box;a.alignment={...wrap,horizontal:"center"};
-      b.value=[r.no,r.at,r.cat||"—",r.title||"—",r.dirTxt,r.pos,r.memo||"—"][k];b.font=k===0?{...FB,size:12}:F;b.border=box;b.alignment={wrapText:true,vertical:k===ROWS-1?"top":"middle"};row.getCell(1).border=box}
+      b.value=[r.no,r.at,[r.cat,r.ddTxt?"DD "+r.ddTxt:""].filter(Boolean).join("／")||"—",[r.title,r.measure].filter(Boolean).join("／")||"—",r.dirTxt,r.pos,r.memo||"—"][k];b.font=k===0?{...FB,size:12}:F;b.border=box;b.alignment={wrapText:true,vertical:k===ROWS-1?"top":"middle"};row.getCell(1).border=box}
     const d=await fullURL(p);if(d){const {im,u}=await loadImage(await (await fetch(d)).blob());const sc=Math.min((boxW-14)/im.naturalWidth,(boxH-14)/im.naturalHeight);URL.revokeObjectURL(u);
       const iw=Math.round(im.naturalWidth*sc),ih=Math.round(im.naturalHeight*sc);w2.addImage(wb.addImage({base64:d,extension:"jpeg"}),{tl:{col:Math.min(.4,(boxW-iw)/2/boxW),row:r0-1+.12},ext:{width:iw,height:ih},editAs:"oneCell"})}
     r0+=ROWS;if((i+1)%3===0&&i<list.length-1)w2.getRow(r0-1).addPageBreak();else{w2.getRow(r0).height=10;r0+=1}}
@@ -645,7 +821,7 @@ onAuthStateChanged(auth,u=>{
   onSnapshot(collection(db,"sites"),sn=>{sites=sn.docs.map(d=>({...d.data(),id:d.id}));
     if(curSiteId&&!sn.metadata.fromCache&&!sites.find(s=>s.id===curSiteId))setSite("");
     if(!curSiteId&&sites.length){const lt=sites.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))[0];setSite(lt.id)}renderAll()},e=>{gateLogin("データを読み込めません（"+e.code+"）。管理者に連絡してください。")});
-  subscribePhotos();renderAll();
+  subscribePhotos();subscribeDD();renderAll();
   if(!sens.watching)gateStart();else $("gate").hidden=true;
 });
 </script>
