@@ -4,7 +4,7 @@
 
 - 公開：GitHub Pages
 - データ：Firebase（Authentication＝Googleログイン、Firestore＝写真とデータ）
-- ログインできるのは @nexeed-consulting.com のアカウントのみ（`config.js` と `firestore.rules`）
+- ログインできるのは @nexeed-consulting.com と @beaconsulting.jp のGoogleアカウントのみ（`config.js` と `firestore.rules`）
 
 ## ファイル
 - `index.html` … アプリ本体

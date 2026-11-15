@@ -8,4 +8,4 @@ export const firebaseConfig = {
   appId: "1:680986437691:web:b50a83e9f1c0aec81cd41e"
 };
 // ログインを許可するメールのドメイン
-export const allowedDomains = ["nexeed-consulting.com"];
+export const allowedDomains = ["nexeed-consulting.com", "beaconsulting.jp"];

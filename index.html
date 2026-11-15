@@ -311,7 +311,7 @@ textarea{resize:vertical;min-height:72px}select{height:44px}
 <div class="toast" id="toast" role="status"></div>
 
 <script type="module">
-import { firebaseConfig, allowedDomains } from "./config.js?v=2";
+import { firebaseConfig, allowedDomains } from "./config.js?v=3";
 import { DD_CHAPTERS, DD_ITEMS, SEVERITY, LIKELIHOOD, riskLevel } from "./dd-items.js?v=2";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
@@ -348,7 +348,7 @@ const okDomain=email=>allowedDomains.some(d=>String(email||"").toLowerCase().end
 
 function gateLogin(msg){
   $("gate").hidden=false;
-  $("gateBody").innerHTML=`<div style="display:flex;flex-direction:column;gap:14px"><p>現場写真を「どこで・いつ・どの方向」を付けて記録し、地図に並べるNEXEED社内のアプリです。会社のGoogleアカウントでログインしてください。</p>
+  $("gateBody").innerHTML=`<div style="display:flex;flex-direction:column;gap:14px"><p>現場写真を「どこで・いつ・どの方向」を付けて記録し、地図に並べるNEXEED社内のアプリです。会社のメールアドレス（@nexeed-consulting.com／@beaconsulting.jp）のGoogleアカウントでログインしてください。</p>
   ${msg?`<p class="err">${esc(msg)}</p>`:""}<button class="btn primary" id="gLogin" style="min-height:52px;font-size:16px">Googleでログイン</button></div>`;
   $("gLogin").onclick=async()=>{try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){gateLogin("ログインできませんでした："+(e.code||e.message))}};
 }

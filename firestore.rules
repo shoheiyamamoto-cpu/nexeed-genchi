@@ -1,11 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // NEXEEDのGoogleアカウント（@nexeed-consulting.com）でログインした人だけが読み書きできる
+    // NEXEED（@nexeed-consulting.com）とBeaconsulting（@beaconsulting.jp）のGoogleアカウントでログインした人だけが読み書きできる
     function staff() {
       return request.auth != null
         && request.auth.token.email_verified == true
-        && request.auth.token.email.matches('.*@nexeed-consulting[.]com$');
+        && request.auth.token.email.matches('.*@(nexeed-consulting[.]com|beaconsulting[.]jp)$');
     }
     match /{document=**} {
       allow read, write: if staff();
