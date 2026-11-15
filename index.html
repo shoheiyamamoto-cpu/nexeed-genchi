@@ -257,7 +257,7 @@ textarea{resize:vertical;min-height:72px}select{height:44px}
 <div class="toast" id="toast" role="status"></div>
 
 <script type="module">
-import { firebaseConfig, allowedDomains } from "./config.js";
+import { firebaseConfig, allowedDomains } from "./config.js?v=2";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, setDoc, updateDoc, deleteDoc, getDoc, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
